@@ -25,6 +25,15 @@ def get_voices():
     ]
 
 
+def get_voice_ids():
+    response = client.voices.search(page_size=100)
+
+    return {
+        voice.voice_id
+        for voice in response.voices
+    }
+
+
 def generate_speech(text: str, voice_id: str):
     audio = client.text_to_speech.convert(
         voice_id=voice_id,

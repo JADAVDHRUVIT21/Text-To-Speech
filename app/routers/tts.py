@@ -2,16 +2,25 @@ from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
-from app.schemas.tts_schema import TTSRequest
+from app.schemas.tts_schema import (
+    TTSRequest,
+    TTSHistoryResponse,
+    SUPPORTED_LANGUAGES
+)
 from app.services.tts_service import (
     generate_speech,
-    get_voices as get_voices_from_service
+    get_voices as get_voices_from_service,
+    get_voice_ids
 )
 from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.tts_history import TTSHistory
 
-router = APIRouter(prefix="/api", tags=["TTS"])
+
+router = APIRouter(
+    prefix="/api",
+    tags=["TTS"]
+)
 
 
 @router.post("/tts")
@@ -20,7 +29,21 @@ def generate_tts(
     db: Session = Depends(get_db),
     current_user_id: str = Depends(get_current_user)
 ):
+    if request.language not in SUPPORTED_LANGUAGES:
+        raise HTTPException(
+            status_code=400,
+            detail="Unsupported language"
+        )
+
     try:
+        voice_ids = get_voice_ids()
+
+        if request.voice not in voice_ids:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid voice"
+            )
+
         audio = generate_speech(
             text=request.text,
             voice_id=request.voice
@@ -44,12 +67,16 @@ def generate_tts(
             }
         )
 
-    except Exception as e:
+    except HTTPException:
+        db.rollback()
+        raise
+
+    except Exception:
         db.rollback()
 
         raise HTTPException(
-            status_code=500,
-            detail=f"TTS generation failed: {str(e)}"
+        status_code=500,
+        detail="TTS generation failed. Please try again later."
         )
 
 
@@ -62,24 +89,79 @@ def get_voices():
             "voices": voices
         }
 
-    except Exception as e:
+    except Exception:
         raise HTTPException(
-            status_code=500,
-            detail=f"Failed to fetch voices: {str(e)}"
-        )
-        
-@router.get("/history")
+        status_code=500,
+        detail="Failed to fetch voices. Please try again later."
+    )
+
+
+@router.get(
+    "/history",
+    response_model=list[TTSHistoryResponse]
+)
 def get_history(
     db: Session = Depends(get_db),
     current_user_id: str = Depends(get_current_user)
 ):
     history = (
         db.query(TTSHistory)
-        .filter(TTSHistory.user_id == int(current_user_id))
-        .order_by(TTSHistory.created_at.desc())
+        .filter(
+            TTSHistory.user_id == int(current_user_id)
+        )
+        .order_by(
+            TTSHistory.created_at.desc()
+        )
         .all()
     )
 
+    return history
+
+@router.delete("/history/{history_id}")
+def delete_history(
+    history_id: int,
+    db: Session = Depends(get_db),
+    current_user_id: str = Depends(get_current_user)
+):
+    history = (
+        db.query(TTSHistory)
+        .filter(
+            TTSHistory.id == history_id,
+            TTSHistory.user_id == int(current_user_id)
+        )
+        .first()
+    )
+
+    if not history:
+        raise HTTPException(
+            status_code=404,
+            detail="History item not found"
+        )
+
+    db.delete(history)
+    db.commit()
+
     return {
-        "history": history
+        "message": "History item deleted successfully"
+    }
+
+
+@router.delete("/history")
+def clear_history(
+    db: Session = Depends(get_db),
+    current_user_id: str = Depends(get_current_user)
+):
+    deleted_count = (
+        db.query(TTSHistory)
+        .filter(
+            TTSHistory.user_id == int(current_user_id)
+        )
+        .delete(synchronize_session=False)
+    )
+
+    db.commit()
+
+    return {
+        "message": "All history deleted successfully",
+        "deleted_count": deleted_count
     }

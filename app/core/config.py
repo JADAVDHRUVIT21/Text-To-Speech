@@ -4,12 +4,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     APP_NAME: str = "Text-to-Speech Application"
     DEBUG: bool = True
-
-    DATABASE_URL: str = ""
-
-    SECRET_KEY: str = "change-this-secret-key"
-
-    TTS_API_KEY: str = ""
+    DATABASE_URL: str
+    SECRET_KEY: str
+    TTS_API_KEY: str
     TTS_REGION: str = ""
     TTS_ENDPOINT: str = ""
 

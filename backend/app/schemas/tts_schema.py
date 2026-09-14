@@ -5,14 +5,36 @@ from pydantic import BaseModel, Field
 
 SUPPORTED_LANGUAGES = {
     "en": "English",
+    "ja": "Japanese",
+    "zh": "Chinese",
+    "de": "German",
     "hi": "Hindi",
     "gu": "Gujarati",
-    "mr": "Marathi",
-    "es": "Spanish",
     "fr": "French",
-    "de": "German",
+    "ko": "Korean",
+    "pt": "Portuguese",
+    "it": "Italian",
+    "es": "Spanish",
+    "id": "Indonesian",
+    "nl": "Dutch",
+    "tr": "Turkish",
+    "fil": "Filipino",
+    "pl": "Polish",
+    "sv": "Swedish",
+    "bg": "Bulgarian",
+    "ro": "Romanian",
+    "ar": "Arabic",
+    "cs": "Czech",
+    "el": "Greek",
+    "fi": "Finnish",
+    "hr": "Croatian",
+    "ms": "Malay",
+    "sk": "Slovak",
+    "da": "Danish",
+    "ta": "Tamil",
+    "uk": "Ukrainian",  
+    "ru": "Russian",
 }
-
 
 class TTSRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=5000)

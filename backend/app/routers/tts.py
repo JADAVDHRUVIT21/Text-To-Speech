@@ -26,9 +26,12 @@ router = APIRouter(
 @router.post("/tts")
 def generate_tts(
     request: TTSRequest,
+    history_id: int | None = None,
     db: Session = Depends(get_db),
     current_user_id: str = Depends(get_current_user)
 ):
+    user_id = int(current_user_id)
+
     if request.language not in SUPPORTED_LANGUAGES:
         raise HTTPException(
             status_code=400,
@@ -49,14 +52,36 @@ def generate_tts(
             voice_id=request.voice
         )
 
-        history = TTSHistory(
-            user_id=int(current_user_id),
-            text=request.text,
-            language=request.language,
-            voice=request.voice
-        )
+        if history_id is not None:
+            history = (
+                db.query(TTSHistory)
+                .filter(
+                    TTSHistory.id == history_id,
+                    TTSHistory.user_id == user_id
+                )
+                .first()
+            )
 
-        db.add(history)
+            if not history:
+                raise HTTPException(
+                    status_code=404,
+                    detail="History item not found"
+                )
+
+            history.text = request.text
+            history.language = request.language
+            history.voice = request.voice
+
+        else:
+            history = TTSHistory(
+                user_id=user_id,
+                text=request.text,
+                language=request.language,
+                voice=request.voice
+            )
+
+            db.add(history)
+
         db.commit()
 
         return StreamingResponse(
@@ -71,13 +96,27 @@ def generate_tts(
         db.rollback()
         raise
 
-    except Exception:
+    except Exception as e:
         db.rollback()
+        print("TTS ERROR:", repr(e))
 
         raise HTTPException(
-        status_code=500,
-        detail="TTS generation failed. Please try again later."
+            status_code=500,
+            detail=str(e)
         )
+
+
+@router.get("/languages")
+def get_languages():
+    return {
+        "languages": [
+            {
+                "code": code,
+                "name": name
+            }
+            for code, name in SUPPORTED_LANGUAGES.items()
+        ]
+    }
 
 
 @router.get("/voices")
@@ -91,9 +130,9 @@ def get_voices():
 
     except Exception:
         raise HTTPException(
-        status_code=500,
-        detail="Failed to fetch voices. Please try again later."
-    )
+            status_code=500,
+            detail="Failed to fetch voices. Please try again later."
+        )
 
 
 @router.get(
@@ -116,6 +155,66 @@ def get_history(
     )
 
     return history
+
+
+@router.post(
+    "/history",
+    response_model=TTSHistoryResponse,
+    status_code=201
+)
+def create_history(
+    request: TTSRequest,
+    db: Session = Depends(get_db),
+    current_user_id: str = Depends(get_current_user)
+):
+    history = TTSHistory(
+        user_id=int(current_user_id),
+        text=request.text,
+        language=request.language,
+        voice=request.voice
+    )
+
+    db.add(history)
+    db.commit()
+    db.refresh(history)
+
+    return history
+
+
+@router.put(
+    "/history/{history_id}",
+    response_model=TTSHistoryResponse
+)
+def update_history(
+    history_id: int,
+    request: TTSRequest,
+    db: Session = Depends(get_db),
+    current_user_id: str = Depends(get_current_user)
+):
+    history = (
+        db.query(TTSHistory)
+        .filter(
+            TTSHistory.id == history_id,
+            TTSHistory.user_id == int(current_user_id)
+        )
+        .first()
+    )
+
+    if not history:
+        raise HTTPException(
+            status_code=404,
+            detail="History item not found"
+        )
+
+    history.text = request.text
+    history.language = request.language
+    history.voice = request.voice
+
+    db.commit()
+    db.refresh(history)
+
+    return history
+
 
 @router.delete("/history/{history_id}")
 def delete_history(

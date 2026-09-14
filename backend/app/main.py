@@ -40,19 +40,15 @@ def health_check():
         with engine.connect() as connection:
             connection.execute(text("SELECT 1"))
 
-        tts_configured = bool(settings.TTS_API_KEY)
-
         return {
             "status": "ok",
             "database": "connected",
-            "tts": "configured" if tts_configured else "not_configured"
+            "tts": "puter.js"
         }
 
     except Exception:
         return {
             "status": "error",
             "database": "unavailable",
-            "tts": "configured"
-            if settings.TTS_API_KEY
-            else "not_configured"
+            "tts": "puter.js"
         }

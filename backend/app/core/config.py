@@ -6,9 +6,6 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     DATABASE_URL: str
     SECRET_KEY: str
-    TTS_API_KEY: str
-    TTS_REGION: str = ""
-    TTS_ENDPOINT: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env",

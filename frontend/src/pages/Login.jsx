@@ -97,7 +97,7 @@ function Login() {
     } catch (err) {
       setError(
         err.response?.data?.detail ||
-          "Unable to login. Please check your email and password."
+        "Unable to login. Please check your email and password."
       );
 
       setLoading(false);
@@ -327,7 +327,7 @@ function Login() {
                   className="text-[11px] font-semibold text-slate-400 transition hover:text-slate-600 dark:hover:text-slate-300"
                   tabIndex={-1}
                 >
-                  {showPassword ? "Hide" : "Show"}
+
                 </button>
               </div>
 

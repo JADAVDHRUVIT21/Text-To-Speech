@@ -7,6 +7,7 @@ from app.models.user import User
 from app.models.tts_history import TTSHistory
 from app.routers.tts import router as tts_router
 from app.routers.auth import router as auth_router
+from app.routers.document import router as document_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -27,6 +28,7 @@ app.add_middleware(
 
 app.include_router(tts_router)
 app.include_router(auth_router)
+app.include_router(document_router)
 
 @app.get("/api/health")
 def health_check():

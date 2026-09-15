@@ -52,8 +52,7 @@
   <a href="#-tech-stack"><b>Tech Stack</b></a> ·
   <a href="#-installation"><b>Installation</b></a> ·
   <a href="#-api-documentation"><b>API</b></a> ·
-  <a href="#-roadmap"><b>Roadmap</b></a> ·
-  <a href="#-activity"><b>Activity</b></a>
+  <a href="#-roadmap"><b>Roadmap</b></a>
 </p>
 
 </div>
@@ -197,10 +196,7 @@ mindmap
 <div align="center">
 
 ### 🏠 Dashboard
-
-<a href="frontend/screenshots/01-dashboard.png">
-  <img src="frontend/screenshots/01-dashboard.png" width="90%" alt="Dashboard" style="border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);" />
-</a>
+<img src="frontend/screenshots/01-dashboard.png" width="90%" alt="Dashboard" />
 
 <br/><br/>
 
@@ -209,16 +205,12 @@ mindmap
 <table>
 <tr>
 <td width="50%" align="center">
-<b>🔑 Login</b><br/>
-<a href="frontend/screenshots/02-login.png">
-  <img src="frontend/screenshots/02-login.png" width="100%" alt="Login" style="border-radius: 10px;" />
-</a>
+<b>Login</b><br/>
+<img src="frontend/screenshots/02-login.png" width="100%" alt="Login" />
 </td>
 <td width="50%" align="center">
-<b>📝 Register</b><br/>
-<a href="frontend/screenshots/03-register.png">
-  <img src="frontend/screenshots/03-register.png" width="100%" alt="Register" style="border-radius: 10px;" />
-</a>
+<b>Register</b><br/>
+<img src="frontend/screenshots/03-register.png" width="100%" alt="Register" />
 </td>
 </tr>
 </table>
@@ -226,26 +218,17 @@ mindmap
 <br/>
 
 ### 📜 Speech History
-
-<a href="frontend/screenshots/04-history.png">
-  <img src="frontend/screenshots/04-history.png" width="90%" alt="History" style="border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);" />
-</a>
+<img src="frontend/screenshots/04-history.png" width="90%" alt="History" />
 
 <br/><br/>
 
 ### ⚙️ Account & Settings
-
-<a href="frontend/screenshots/05-account-settings.png">
-  <img src="frontend/screenshots/05-account-settings.png" width="90%" alt="Settings" style="border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);" />
-</a>
+<img src="frontend/screenshots/05-account-settings.png" width="90%" alt="Settings" />
 
 <br/><br/>
 
 ### 🔊 Generated Speech
-
-<a href="frontend/screenshots/06-generated-speech.png">
-  <img src="frontend/screenshots/06-generated-speech.png" width="90%" alt="Generated Speech" style="border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);" />
-</a>
+<img src="frontend/screenshots/06-generated-speech.png" width="90%" alt="Generated Speech" />
 
 <br/><br/>
 
@@ -254,16 +237,12 @@ mindmap
 <table>
 <tr>
 <td width="50%" align="center">
-<b>🌍 Supported Languages</b><br/>
-<a href="frontend/screenshots/07-languages.png">
-  <img src="frontend/screenshots/07-languages.png" width="100%" alt="Languages" style="border-radius: 10px;" />
-</a>
+<b>Supported Languages</b><br/>
+<img src="frontend/screenshots/07-languages.png" width="100%" alt="Languages" />
 </td>
 <td width="50%" align="center">
-<b>🎙️ Voice Selection</b><br/>
-<a href="frontend/screenshots/08-voices.png">
-  <img src="frontend/screenshots/08-voices.png" width="100%" alt="Voices" style="border-radius: 10px;" />
-</a>
+<b>Voice Selection</b><br/>
+<img src="frontend/screenshots/08-voices.png" width="100%" alt="Voices" />
 </td>
 </tr>
 </table>
@@ -271,10 +250,7 @@ mindmap
 <br/>
 
 ### 🌙 Dark Mode
-
-<a href="frontend/screenshots/09-dark-mode.png">
-  <img src="frontend/screenshots/09-dark-mode.png" width="90%" alt="Dark Mode" style="border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.3);" />
-</a>
+<img src="frontend/screenshots/09-dark-mode.png" width="90%" alt="Dark Mode" />
 
 </div>
 
@@ -818,105 +794,39 @@ curl http://127.0.0.1:8000/api/health
 
 <div align="center">
 
-### 📅 Feature Development Plan
+```mermaid
+timeline
+    title Feature Roadmap
+    section Q1 : Authentication
+        Social Login : OAuth providers
+        OTP Login : Real-time codes
+    section Q2 : Platforms
+        PWA : Progressive Web App
+        Android : Native app
+        iOS : Native app
+    section Q3 : Audio
+        Voice Controls : Speed & pitch
+        Favorites : Save preferred voices
+    section Q4 : Advanced
+        Search : History filtering
+        Analytics : Usage statistics
+        Cloud : Audio storage
+        Rate Limit : Improved limits
+```
 
 </div>
 
-```mermaid
-gantt
-    title Feature Roadmap
-    dateFormat YYYY-MM-DD
-    axisFormat %b %Y
-
-    section 🔐 Authentication
-    Social Login & OAuth      :a1, 2025-11-01, 30d
-    OTP-based Login           :a2, after a1, 30d
-
-    section 📱 Platforms
-    Progressive Web App (PWA) :b1, 2026-01-01, 45d
-    Native Android App        :b2, after b1, 60d
-    Native iOS App            :b3, after b2, 60d
-
-    section 🎚️ Audio Features
-    Speed & Pitch Controls    :c1, 2026-02-01, 30d
-    Favorite Voices           :c2, after c1, 21d
-
-    section 📊 Advanced
-    History Search & Filters  :d1, 2026-03-01, 30d
-    Usage Analytics           :d2, after d1, 30d
-    Cloud Audio Storage       :d3, after d2, 45d
-    Improved Rate Limiting    :d4, after d3, 30d
-```
-
-<br/>
-
-### ✅ Planned Features
-
-<table>
-<tr>
-<td width="50%" valign="top">
-
-#### 🔐 Authentication
 - [ ] 🔗 Social login & OAuth
 - [ ] 📲 OTP-based login
-
-#### 📱 Platforms
 - [ ] 📦 Progressive Web App (PWA)
 - [ ] 🤖 Native Android app
 - [ ] 🍎 Native iOS app
-
-</td>
-<td width="50%" valign="top">
-
-#### 🎚️ Audio Features
-- [ ] 🎛️ Speech speed & pitch controls
+- [ ] 🎚️ Speech speed & pitch controls
 - [ ] ⭐ Favorite voices
-
-#### 📊 Advanced
-- [ ] 🔍 Advanced history search & filters
-- [ ] 📈 Usage analytics & statistics
+- [ ] 🔍 Advanced history search
+- [ ] 📊 Usage analytics
 - [ ] ☁️ Cloud audio storage
 - [ ] 🚦 Improved rate limiting
-
-</td>
-</tr>
-</table>
-
-<img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png" width="100%" />
-
----
-
-## 📈 Activity
-
-<div align="center">
-
-### ⭐ Star History
-
-<a href="https://star-history.com/#JADAVDHRUVIT21/Text-to-Speech&Date">
-  <img src="https://api.star-history.com/svg?repos=JADAVDHRUVIT21/Text-to-Speech&type=Date" alt="Star History Chart" width="90%" />
-</a>
-
-<br/><br/>
-
-### 🐍 Contribution Snake
-
-<img src="https://raw.githubusercontent.com/JADAVDHRUVIT21/JADAVDHRUVIT21/output/github-contribution-grid-snake.svg" alt="Snake animation" width="90%" />
-
-<br/>
-
-<img src="https://raw.githubusercontent.com/JADAVDHRUVIT21/JADAVDHRUVIT21/output/github-contribution-grid-snake-dark.svg" alt="Snake animation dark" width="90%" />
-
-<br/><br/>
-
-### 📊 Repository Stats
-
-<img src="https://github-readme-stats.vercel.app/api/pin/?username=JADAVDHRUVIT21&repo=Text-to-Speech&theme=radical" alt="Repo Card" />
-
-<br/><br/>
-
-<img src="https://github-readme-streak-stats.herokuapp.com/?user=JADAVDHRUVIT21&theme=radical" alt="Streak Stats" width="70%" />
-
-</div>
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png" width="100%" />
 

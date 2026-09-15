@@ -107,9 +107,7 @@ function getLanguageName(language) {
   return names[code] || names[code.split("-")[0]] || (language || "Language");
 }
 
-/* ------------------------------------------------------------------ */
-/*  Theme-aware utility classes                                        */
-/* ------------------------------------------------------------------ */
+// Theme-aware utility classes
 
 const THEME = {
   sidebar: "bg-[var(--bg-surface)] border-[var(--border-soft)]",
@@ -121,9 +119,7 @@ const THEME = {
     "hover:bg-[var(--bg-elevated)] active:bg-[var(--bg-elevated)]",
 };
 
-/* ------------------------------------------------------------------ */
-/*  Accent-aware style helper (supports Rainbow gradient)              */
-/* ------------------------------------------------------------------ */
+// Accent-aware style helper (supports Rainbow gradient)
 
 function accentBg() {
   return {
@@ -131,9 +127,14 @@ function accentBg() {
   };
 }
 
-/* ------------------------------------------------------------------ */
-/*  Confirm alert                                                      */
-/* ------------------------------------------------------------------ */
+// Detect Mac for keyboard glyph
+
+function isMacPlatform() {
+  if (typeof navigator === "undefined") return false;
+  return /Mac|iPhone|iPod|iPad/i.test(navigator.platform || navigator.userAgent || "");
+}
+
+// Confirm alert
 
 function IOSConfirmAlert({
   open,
@@ -193,9 +194,7 @@ function IOSConfirmAlert({
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Rename alert                                                       */
-/* ------------------------------------------------------------------ */
+// Rename alert
 
 function IOSRenameAlert({ open, value, onChange, onCancel, onConfirm }) {
   const inputRef = useRef(null);
@@ -274,9 +273,7 @@ function IOSRenameAlert({ open, value, onChange, onCancel, onConfirm }) {
   );
 }
 
-/* ------------------------------------------------------------------ */
 /*  Chat options menu                                                  */
-/* ------------------------------------------------------------------ */
 
 function ChatOptionsMenu({ position, pinned, onPin, onRename, onDelete }) {
   if (!position) return null;
@@ -350,9 +347,7 @@ function ChatOptionsMenu({ position, pinned, onPin, onRename, onDelete }) {
   );
 }
 
-/* ------------------------------------------------------------------ */
 /*  Sidebar toggle button                                              */
-/* ------------------------------------------------------------------ */
 
 function SidebarToggleButton({ collapsed, onClick }) {
   const [hover, setHover] = useState(false);
@@ -412,9 +407,103 @@ function SidebarToggleButton({ collapsed, onClick }) {
   );
 }
 
-/* ------------------------------------------------------------------ */
+/*  New Chat button with hover tooltip                                 */
+
+function NewChatButton({ collapsed, onNewChat }) {
+  const [hover, setHover] = useState(false);
+  const [buttonRect, setButtonRect] = useState(null);
+  const hoverTimerRef = useRef(null);
+  const wrapperRef = useRef(null);
+
+  const isMac = useMemo(() => isMacPlatform(), []);
+  const shortcutLabel = isMac ? "⌘ J" : "Ctrl J";
+
+  const handleMouseEnter = () => {
+    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+
+    // Show tooltip after ~700ms of hover
+    hoverTimerRef.current = setTimeout(() => {
+      if (wrapperRef.current) {
+        setButtonRect(wrapperRef.current.getBoundingClientRect());
+        setHover(true);
+      }
+    }, 700);
+  };
+
+  const handleMouseLeave = () => {
+    if (hoverTimerRef.current) {
+      clearTimeout(hoverTimerRef.current);
+      hoverTimerRef.current = null;
+    }
+    setHover(false);
+  };
+
+  const handleClick = () => {
+    // Hide tooltip immediately on click
+    if (hoverTimerRef.current) {
+      clearTimeout(hoverTimerRef.current);
+      hoverTimerRef.current = null;
+    }
+    setHover(false);
+    onNewChat?.();
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+    };
+  }, []);
+
+  return (
+    <>
+      <div
+        ref={wrapperRef}
+        className="relative"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        <button
+          type="button"
+          onClick={handleClick}
+          title="New Chat"
+          className={`flex min-h-11 w-full items-center gap-3 rounded-xl border border-[var(--border-soft)] bg-[var(--bg-surface)] ${
+            collapsed ? "justify-center px-2" : "px-3.5"
+          } text-sm font-semibold shadow-sm transition hover:bg-[var(--bg-elevated)] active:scale-[0.99] ${THEME.textPrimary}`}
+        >
+          <div
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-white"
+            style={accentBg()}
+          >
+            <Plus size={17} />
+          </div>
+
+          {!collapsed && <span>New Chat</span>}
+        </button>
+      </div>
+
+      {hover && buttonRect &&
+        createPortal(
+          <div
+            style={{
+              position: "fixed",
+              left: buttonRect.right + 8,
+              top: buttonRect.top + buttonRect.height / 2,
+              transform: "translateY(-50%)",
+              zIndex: 9999,
+              pointerEvents: "none",
+            }}
+            className="whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1 text-xs font-semibold text-white shadow-lg dark:bg-slate-700"
+          >
+            New Chat · {shortcutLabel}
+          </div>,
+          document.body
+        )}
+    </>
+  );
+}
+
 /*  Sidebar                                                            */
-/* ------------------------------------------------------------------ */
 
 export default function Sidebar({
   history = [],
@@ -469,6 +558,9 @@ export default function Sidebar({
       return false;
     }
   });
+
+  // Ref to the search input so Ctrl+K can focus it
+  const searchInputRef = useRef(null);
 
   useEffect(() => {
     try {
@@ -529,6 +621,87 @@ export default function Sidebar({
     const timer = setTimeout(() => setPinLimitMessage(""), 2500);
     return () => clearTimeout(timer);
   }, [pinLimitMessage]);
+
+  /* ---------------------------------------------------------------- */
+  /*  Keyboard shortcuts                                              */
+  /*    Ctrl+J / ⌘J  → New Chat                                       */
+  /*    Ctrl+K / ⌘K  → Focus search bar (expands sidebar if needed)  */
+  /*  Both skip when a modal / dropdown is open.                      */
+  /* ---------------------------------------------------------------- */
+
+  const modalOpen = Boolean(renameChat) || Boolean(deleteChat) || Boolean(unpinChat);
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      const isModifier = event.ctrlKey || event.metaKey;
+      if (!isModifier) return;
+
+      // Ignore shift/alt combos
+      if (event.shiftKey || event.altKey) return;
+
+      const key = event.key.toLowerCase();
+
+      // ---- Ctrl+J / ⌘J → New Chat ----
+      if (key === "j") {
+        // Don't hijack when a modal or menu is open
+        if (modalOpen) return;
+        if (menuId) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        setMenuId(null);
+        setMenuPosition(null);
+        setSearchQuery("");
+        onNewChat?.();
+        onMobileClose?.();
+        return;
+      }
+
+      // ---- Ctrl+K / ⌘K → Focus search ----
+      if (key === "k") {
+        // Don't hijack when a modal or menu is open
+        if (modalOpen) return;
+        if (menuId) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        setMenuId(null);
+        setMenuPosition(null);
+
+        // If the sidebar is collapsed, expand it first so the search input exists
+        if (collapsed) {
+          setCollapsed(false);
+          try {
+            localStorage.setItem(SIDEBAR_COLLAPSED_KEY, "0");
+          } catch {
+            /* ignore */
+          }
+          window.dispatchEvent(
+            new CustomEvent("tts:sidebar", {
+              detail: { collapsed: false },
+            })
+          );
+          // Wait for the input to mount, then focus
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              searchInputRef.current?.focus();
+              searchInputRef.current?.select();
+            });
+          });
+        } else {
+          searchInputRef.current?.focus();
+          searchInputRef.current?.select();
+        }
+
+        return;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onNewChat, onMobileClose, modalOpen, menuId, collapsed]);
 
   const toggleCollapsed = () => {
     setCollapsed((prev) => {
@@ -985,10 +1158,11 @@ export default function Sidebar({
                 </div>
 
                 <input
+                  ref={searchInputRef}
                   type="text"
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder="Search chats…"
+                  placeholder="Search chats…  (Ctrl K)"
                   className={`h-10 w-full rounded-xl border border-[var(--border-soft)] bg-[var(--bg-elevated)] pl-10 pr-8 text-sm font-medium outline-none transition placeholder:text-[var(--text-muted)] focus:border-transparent focus:shadow-[0_0_0_3px_var(--accent-soft)] ${THEME.textPrimary}`}
                 />
 
@@ -1016,28 +1190,16 @@ export default function Sidebar({
           )}
 
           <div className={`${collapsed ? "px-2 pt-3" : "px-3 pt-3"}`}>
-            <button
-              type="button"
-              onClick={() => {
+            <NewChatButton
+              collapsed={collapsed}
+              onNewChat={() => {
                 setMenuId(null);
                 setMenuPosition(null);
+                setSearchQuery("");
                 onNewChat?.();
                 onMobileClose?.();
               }}
-              title="New Chat"
-              className={`flex min-h-11 w-full items-center gap-3 rounded-xl border border-[var(--border-soft)] bg-[var(--bg-surface)] ${
-                collapsed ? "justify-center px-2" : "px-3.5"
-              } text-sm font-semibold shadow-sm transition hover:bg-[var(--bg-elevated)] active:scale-[0.99] ${THEME.textPrimary}`}
-            >
-              <div
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-white"
-                style={accentBg()}
-              >
-                <Plus size={17} />
-              </div>
-
-              {!collapsed && <span>New Chat</span>}
-            </button>
+            />
           </div>
 
           {!collapsed && (

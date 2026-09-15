@@ -107,6 +107,27 @@ export const clearHistory = async (token) => {
   return response.data;
 };
 
+/* Document extraction */
+
+export const extractDocumentText = async (file, token) => {
+  const formData = new FormData();
+
+  formData.append("file", file);
+
+  const response = await api.post(
+    "/api/documents/extract",
+    formData,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+
+  return response.data;
+};
+
 export const checkHealth = async () => {
   const response = await api.get("/api/health");
   return response.data;

@@ -1,6 +1,9 @@
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
 from app.core.security import get_current_user
+from app.services.content_moderation_service import (
+    contains_abusive_content,
+)
 from app.services.document_service import (
     SUPPORTED_DOCUMENT_TYPES,
     extract_document_text,
@@ -70,6 +73,39 @@ async def extract_document(
             filename=filename,
             file_bytes=file_bytes,
         )
+
+        if not extracted_text.strip():
+            raise HTTPException(
+                status_code=400,
+                detail="No readable text was found in the uploaded document.",
+            )
+
+        # ---------------------------------------------------------
+        # Abusive content protection
+        # ---------------------------------------------------------
+        try:
+            has_abusive_content = await contains_abusive_content(
+                extracted_text
+            )
+
+        except RuntimeError:
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    "Unable to verify the document for abusive content. "
+                    "Please try again later."
+                ),
+            )
+
+        if has_abusive_content:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "Inappropriate or abusive language was detected "
+                    "in the document. Please upload a document without "
+                    "abusive or offensive language."
+                ),
+            )
 
         return {
             "filename": filename,

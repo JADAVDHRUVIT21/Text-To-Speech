@@ -42,6 +42,9 @@ import Sidebar from "../components/Sidebar";
 
 const MAX_CHARACTERS = 2999;
 
+const PURGO_MALUM_URL =
+    "https://www.purgomalum.com/service/containsprofanity";
+
 /* ------------------------------------------------------------------ */
 /*  Theme-aware utility class strings                                  */
 /* ------------------------------------------------------------------ */
@@ -1058,6 +1061,41 @@ export default function Dashboard() {
         showToast(message, "error", 4500);
     };
 
+    const checkAbusiveContent = async (textValue) => {
+        if (!textValue || !textValue.trim()) return false;
+
+        try {
+            const params = new URLSearchParams({
+                text: textValue,
+            });
+
+            const response = await fetch(
+                `${PURGO_MALUM_URL}?${params.toString()}`,
+                {
+                    method: "GET",
+                    headers: {
+                        Accept: "text/plain",
+                    },
+                    signal: AbortSignal.timeout(10000),
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error("Content moderation service is unavailable.");
+            }
+
+            const result = (await response.text()).trim().toLowerCase();
+
+            return result === "true";
+        } catch (error) {
+            console.error("CONTENT MODERATION ERROR:", error);
+
+            throw new Error(
+                "Unable to verify the text for abusive content. Please try again later."
+            );
+        }
+    };
+
     const translateText = async (textValue) => {
         const targetLanguage = selectedLanguage?.name || language;
         const prompt = `
@@ -1383,6 +1421,16 @@ ${textValue}
         showToast("Preparing your selected language", "loading");
 
         try {
+            showToast("Checking text safety", "loading");
+
+            const hasAbusiveContent = await checkAbusiveContent(text.trim());
+
+            if (hasAbusiveContent) {
+                throw new Error(
+                    "Inappropriate or abusive language was detected. Please remove it before generating speech."
+                );
+            }
+
             const translatedText = await translateText(text.trim());
             if (translatedText.length > MAX_CHARACTERS) {
                 throw new Error(`The translated text is too long for the TTS provider. Please keep it under ${MAX_CHARACTERS.toLocaleString()} characters.`);

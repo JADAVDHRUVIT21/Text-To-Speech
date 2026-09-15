@@ -7,6 +7,9 @@ import {
     ChevronDown,
     Download,
     FileAudio,
+    FileText,
+    Upload,
+    Loader2,
     Globe2,
     LogOut,
     Menu,
@@ -28,6 +31,7 @@ import {
     getLanguages,
     createHistory,
     updateHistory,
+    extractDocumentText,
 } from "../services/api";
 
 import Sidebar from "../components/Sidebar";
@@ -724,12 +728,16 @@ function IOSToast({ toast, onClose }) {
 /*  Dashboard                                                          */
 /* ------------------------------------------------------------------ */
 
+const DRAFT_STORAGE_KEY = "tts_draft";
+
 export default function Dashboard() {
     const navigate = useNavigate();
     const { settings } = useSettings();
     const { token, user, logout } = useAuth();
 
     const [text, setText] = useState("");
+    const [documentLoading, setDocumentLoading] = useState(false);
+    const [documentName, setDocumentName] = useState("");
     const [language, setLanguage] = useState("en");
     const [voice, setVoice] = useState("");
     const [languages, setLanguages] = useState([]);
@@ -1243,6 +1251,123 @@ ${textValue}
         }
     };
 
+    useEffect(() => {
+        const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
+
+        if (savedDraft) {
+            setText(savedDraft);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (text.trim()) {
+            localStorage.setItem(DRAFT_STORAGE_KEY, text);
+        } else {
+            localStorage.removeItem(DRAFT_STORAGE_KEY);
+        }
+    }, [text]);
+
+    const handleDocumentUpload = async (event) => {
+        const file = event.target.files?.[0];
+        event.target.value = "";
+
+        if (!file) return;
+
+        const allowedExtensions = ["pdf", "txt", "docx", "epub"];
+        const extension = file.name.includes(".")
+            ? file.name.split(".").pop().toLowerCase()
+            : "";
+
+        if (!allowedExtensions.includes(extension)) {
+            showError("Unsupported document type. Please upload a PDF, TXT, DOCX, or EPUB file.");
+            return;
+        }
+
+        const maxDocumentSize = 10 * 1024 * 1024;
+
+        if (file.size > maxDocumentSize) {
+            showError("Document size cannot exceed 10 MB.");
+            return;
+        }
+
+        if (!token) {
+            showError("Your session has expired. Please log in again.");
+            return;
+        }
+
+        setDocumentLoading(true);
+        setError("");
+        setSuccess("");
+        hideToast();
+        showToast(`Extracting text from ${file.name}`, "loading");
+
+        try {
+            const data = await extractDocumentText(file, token);
+            const extractedText = String(data?.text || "").trim();
+
+            if (!extractedText) {
+                throw new Error("No readable text was found in the uploaded document.");
+            }
+
+            setText(extractedText);
+            setDocumentName(data?.filename || file.name);
+            setActiveChatId(null);
+            setCurrentTime(0);
+            setDuration(0);
+            setIsPlaying(false);
+            setSystemAudioReady(false);
+
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current.currentTime = 0;
+            }
+
+            if (window.speechSynthesis) window.speechSynthesis.cancel();
+            systemSpeechRef.current = null;
+
+            if (audioUrl) {
+                if (audioUrl.startsWith("blob:")) URL.revokeObjectURL(audioUrl);
+                setAudioUrl("");
+            }
+
+            const extractedCharacters = Number(data?.character_count) || extractedText.length;
+            const extractedWords = Number(data?.word_count) || extractedText.split(/\s+/).filter(Boolean).length;
+
+            if (extractedCharacters > MAX_CHARACTERS) {
+                setSuccess(
+                    `${file.name} loaded. ${extractedWords.toLocaleString()} words and ${extractedCharacters.toLocaleString()} characters extracted. The text is longer than the ${MAX_CHARACTERS.toLocaleString()}-character TTS limit, so shorten it before generating speech.`
+                );
+            } else {
+                setSuccess(
+                    `${file.name} loaded successfully. ${extractedWords.toLocaleString()} words and ${extractedCharacters.toLocaleString()} characters extracted.`
+                );
+            }
+
+            showToast("Document text extracted successfully.", "success", 3200);
+        } catch (err) {
+            console.error("DOCUMENT EXTRACTION ERROR:", err);
+
+            const status = err?.response?.status;
+            const detail =
+                err?.response?.data?.detail ||
+                err?.response?.data?.message ||
+                err?.message ||
+                "Failed to extract text from the document.";
+
+            let errorMessage = detail;
+
+            if (status === 401) {
+                errorMessage = "Your session has expired. Please log in again.";
+            } else if (status === 413) {
+                errorMessage = "Document size cannot exceed 10 MB.";
+            }
+
+            showError(errorMessage);
+        } finally {
+            setDocumentLoading(false);
+        }
+    };
+
     const handleGenerate = async () => {
         if (!text.trim()) { showError("Please enter some text before generating speech."); return; }
         if (characterCount > MAX_CHARACTERS) {
@@ -1387,7 +1512,8 @@ ${textValue}
     };
 
     const handleClear = () => {
-        setText(""); setError(""); setSuccess(""); setActiveChatId(null);
+        setText("");
+        setDocumentName(""); setError(""); setSuccess(""); setActiveChatId(null);
         setCurrentTime(0); setDuration(0); setIsPlaying(false);
         setSystemAudioReady(false);
         hideToast();
@@ -1653,20 +1779,64 @@ ${textValue}
 
                     <section>
                         <div className={`overflow-visible rounded-[28px] border p-4 shadow-[0_8px_35px_rgba(15,23,42,0.05)] transition-colors sm:p-6 lg:p-7 ${THEME.panel}`}>
-                            <div className="mb-5 flex items-center justify-between gap-3">
-                                <div>
-                                    <h3 className={`text-lg font-bold sm:text-xl ${THEME.textPrimary}`}>Your text</h3>
+                            <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="min-w-0">
+                                    <div className="flex items-center gap-2">
+                                        <h3 className={`text-lg font-bold sm:text-xl ${THEME.textPrimary}`}>Your text</h3>
+                                        <div
+                                            className="hidden h-9 w-9 items-center justify-center rounded-xl sm:flex"
+                                            style={{ backgroundColor: "var(--accent-soft)", color: "var(--accent-primary)" }}
+                                        >
+                                            <FileAudio size={18} />
+                                        </div>
+                                    </div>
                                     <p className={`mt-1 text-xs sm:text-sm ${THEME.textMuted}`}>
-                                        Write or paste the content you want to hear.
+                                        Write, paste, or upload a document to convert it into speech.
                                     </p>
                                 </div>
-                                <div
-                                    className="hidden h-10 w-10 items-center justify-center rounded-xl sm:flex"
-                                    style={{ backgroundColor: "var(--accent-soft)", color: "var(--accent-primary)" }}
+
+                                <label
+                                    className={`inline-flex min-h-11 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold transition active:scale-[0.98] ${
+                                        documentLoading
+                                            ? "cursor-not-allowed opacity-60"
+                                            : `${THEME.border} ${THEME.elevated} ${THEME.textPrimary} hover:bg-[var(--bg-surface)]`
+                                    }`}
                                 >
-                                    <FileAudio size={20} />
-                                </div>
+                                    {documentLoading ? (
+                                        <Loader2 size={17} className="animate-spin" style={{ color: "var(--accent-primary)" }} />
+                                    ) : (
+                                        <Upload size={17} style={{ color: "var(--accent-primary)" }} />
+                                    )}
+                                    {documentLoading ? "Extracting…" : "Upload document"}
+                                    <input
+                                        type="file"
+                                        accept=".pdf,.txt,.docx,.epub,application/pdf,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/epub+zip"
+                                        onChange={handleDocumentUpload}
+                                        disabled={documentLoading}
+                                        className="hidden"
+                                    />
+                                </label>
                             </div>
+
+                            {documentName && (
+                                <div
+                                    className={`mb-4 flex flex-col gap-2 rounded-2xl border px-4 py-3 sm:flex-row sm:items-center sm:justify-between ${THEME.border} ${THEME.elevated}`}
+                                >
+                                    <div className="flex min-w-0 items-center gap-3">
+                                        <div
+                                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+                                            style={{ backgroundColor: "var(--accent-soft)", color: "var(--accent-primary)" }}
+                                        >
+                                            <FileText size={18} />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className={`truncate text-sm font-bold ${THEME.textPrimary}`}>{documentName}</p>
+                                            <p className={`text-[11px] ${THEME.textMuted}`}>Extracted document text</p>
+                                        </div>
+                                    </div>
+                                    <span className={`text-[11px] font-semibold ${THEME.textMuted}`}>PDF · TXT · DOCX · EPUB</span>
+                                </div>
+                            )}
 
                             <div className="relative">
                                 <textarea

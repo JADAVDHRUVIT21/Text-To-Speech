@@ -39,6 +39,20 @@ import Sidebar from "../components/Sidebar";
 const MAX_CHARACTERS = 2999;
 
 /* ------------------------------------------------------------------ */
+/*  Theme-aware utility class strings                                  */
+/* ------------------------------------------------------------------ */
+
+const THEME = {
+    page: "bg-[var(--bg-base)] text-[var(--text-primary)]",
+    panel: "bg-[var(--bg-surface)] border-[var(--border-soft)]",
+    elevated: "bg-[var(--bg-elevated)]",
+    textPrimary: "text-[var(--text-primary)]",
+    textMuted: "text-[var(--text-muted)]",
+    border: "border-[var(--border-soft)]",
+    hoverElevated: "hover:bg-[var(--bg-elevated)]",
+};
+
+/* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
 /* ------------------------------------------------------------------ */
 
@@ -231,7 +245,7 @@ function IOSDropdown({ label, value, options = [], onChange, placeholder, icon: 
 
     return (
         <div className="relative" ref={dropdownRef}>
-            <label className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300">
+            <label className={`mb-2 block text-sm font-semibold ${THEME.textPrimary}`}>
                 {label}
             </label>
             <button
@@ -240,10 +254,10 @@ function IOSDropdown({ label, value, options = [], onChange, placeholder, icon: 
                 onClick={() => setOpen((c) => !c)}
                 className={`flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3.5 text-left transition-all ${
                     disabled
-                        ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-500"
+                        ? "cursor-not-allowed border-[var(--border-soft)] bg-[var(--bg-elevated)] text-[var(--text-muted)] opacity-60"
                         : open
-                            ? "border-transparent bg-white shadow-[0_0_0_3px_var(--accent-soft)] dark:bg-slate-800"
-                            : "border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white dark:border-slate-700 dark:bg-slate-800/60 dark:hover:border-slate-600 dark:hover:bg-slate-800"
+                            ? "border-transparent bg-[var(--bg-surface)] shadow-[0_0_0_3px_var(--accent-soft)]"
+                            : "border-[var(--border-soft)] bg-[var(--bg-elevated)] hover:bg-[var(--bg-surface)]"
                 }`}
             >
                 <div className="flex min-w-0 items-center gap-3">
@@ -262,38 +276,38 @@ function IOSDropdown({ label, value, options = [], onChange, placeholder, icon: 
                         {selectedOption ? (
                             renderOption ? renderOption(selectedOption) : (
                                 <>
-                                    <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-100">
+                                    <p className={`truncate text-sm font-semibold ${THEME.textPrimary}`}>
                                         {selectedOption.label}
                                     </p>
                                     {selectedOption.description && (
-                                        <p className="truncate text-xs text-slate-400 dark:text-slate-500">
+                                        <p className={`truncate text-xs ${THEME.textMuted}`}>
                                             {selectedOption.description}
                                         </p>
                                     )}
                                 </>
                             )
                         ) : (
-                            <p className="text-sm text-slate-400 dark:text-slate-500">{placeholder}</p>
+                            <p className={`text-sm ${THEME.textMuted}`}>{placeholder}</p>
                         )}
                     </div>
                 </div>
-                <ChevronDown size={19} className={`shrink-0 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`} />
+                <ChevronDown size={19} className={`shrink-0 transition-transform ${open ? "rotate-180" : ""} ${THEME.textMuted}`} />
             </button>
 
             {open && !disabled && (
                 <>
                     <div className="fixed inset-0 z-40 bg-black/10 backdrop-blur-[1px] sm:hidden" onClick={() => setOpen(false)} />
-                    <div className="fixed inset-x-3 bottom-3 z-50 max-h-[70vh] overflow-hidden rounded-[28px] border border-slate-200 bg-white p-2 shadow-2xl dark:border-slate-700 dark:bg-slate-900 sm:absolute sm:inset-x-0 sm:bottom-auto sm:top-[calc(100%+8px)] sm:max-h-80 sm:rounded-2xl">
+                    <div className={`fixed inset-x-3 bottom-3 z-50 max-h-[70vh] overflow-hidden rounded-[28px] border p-2 shadow-2xl sm:absolute sm:inset-x-0 sm:bottom-auto sm:top-[calc(100%+8px)] sm:max-h-80 sm:rounded-2xl ${THEME.panel}`}>
                         <div className="flex items-center justify-between px-3 py-3 sm:hidden">
-                            <p className="text-sm font-bold text-slate-900 dark:text-white">{label}</p>
-                            <button type="button" onClick={() => setOpen(false)} className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                            <p className={`text-sm font-bold ${THEME.textPrimary}`}>{label}</p>
+                            <button type="button" onClick={() => setOpen(false)} className={`flex h-8 w-8 items-center justify-center rounded-full ${THEME.elevated} ${THEME.textMuted}`}>
                                 <X size={16} />
                             </button>
                         </div>
                         <div className="max-h-[55vh] overflow-y-auto overscroll-contain sm:max-h-72">
                             {safeOptions.length === 0 ? (
                                 <div className="px-4 py-6 text-center">
-                                    <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">No options available</p>
+                                    <p className={`text-sm font-semibold ${THEME.textMuted}`}>No options available</p>
                                 </div>
                             ) : (
                                 safeOptions.map((option) => {
@@ -303,18 +317,20 @@ function IOSDropdown({ label, value, options = [], onChange, placeholder, icon: 
                                             key={option.value}
                                             type="button"
                                             onClick={() => { onChange(option.value); setOpen(false); }}
-                                            className={`flex w-full items-center justify-between gap-3 rounded-2xl px-3 py-3 text-left transition sm:rounded-xl ${isSelected ? "" : "hover:bg-slate-50 dark:hover:bg-slate-800"}`}
+                                            className={`flex w-full items-center justify-between gap-3 rounded-2xl px-3 py-3 text-left transition sm:rounded-xl ${isSelected ? "" : "hover:bg-[var(--bg-elevated)]"}`}
                                             style={isSelected ? { backgroundColor: "var(--accent-soft)" } : undefined}
                                         >
                                             <div className="min-w-0 flex-1">
                                                 {renderOption ? renderOption(option) : (
                                                     <>
-                                                        <p className={`truncate text-sm font-medium ${isSelected ? "" : "text-slate-700 dark:text-slate-300"}`}
-                                                            style={isSelected ? { color: "var(--accent-primary)" } : undefined}>
+                                                        <p
+                                                            className={`truncate text-sm font-medium ${isSelected ? "" : THEME.textPrimary}`}
+                                                            style={isSelected ? { color: "var(--accent-primary)" } : undefined}
+                                                        >
                                                             {option.label}
                                                         </p>
                                                         {option.description && (
-                                                            <p className="truncate text-xs text-slate-400 dark:text-slate-500">{option.description}</p>
+                                                            <p className={`truncate text-xs ${THEME.textMuted}`}>{option.description}</p>
                                                         )}
                                                     </>
                                                 )}
@@ -337,7 +353,7 @@ function IOSDropdown({ label, value, options = [], onChange, placeholder, icon: 
 }
 
 /* ------------------------------------------------------------------ */
-/*  Account Menu (Portal-based, anchored BELOW button)                 */
+/*  Account Menu                                                       */
 /* ------------------------------------------------------------------ */
 
 function AccountMenu({ user, onSettings, onLogout }) {
@@ -348,9 +364,8 @@ function AccountMenu({ user, onSettings, onLogout }) {
 
     const computePosition = () => {
         if (!buttonRef.current) return null;
-
         const rect = buttonRef.current.getBoundingClientRect();
-        const menuWidth = 288; // w-72 = 18rem = 288px
+        const menuWidth = 288;
         const margin = 10;
 
         let left = rect.right - menuWidth;
@@ -359,9 +374,7 @@ function AccountMenu({ user, onSettings, onLogout }) {
             left = window.innerWidth - menuWidth - margin;
         }
 
-        // Anchor BELOW the button
         const top = rect.bottom + 10;
-
         return { left, top };
     };
 
@@ -380,7 +393,6 @@ function AccountMenu({ user, onSettings, onLogout }) {
 
     useEffect(() => {
         if (!open) return;
-
         const handleOutsideClick = (event) => {
             const clickedButton = buttonRef.current?.contains(event.target);
             const clickedMenu = menuRef.current?.contains(event.target);
@@ -389,16 +401,13 @@ function AccountMenu({ user, onSettings, onLogout }) {
                 setMenuPos(null);
             }
         };
-
         const handleScrollOrResize = () => {
             setOpen(false);
             setMenuPos(null);
         };
-
         document.addEventListener("mousedown", handleOutsideClick);
         window.addEventListener("resize", handleScrollOrResize);
         window.addEventListener("scroll", handleScrollOrResize, true);
-
         return () => {
             document.removeEventListener("mousedown", handleOutsideClick);
             window.removeEventListener("resize", handleScrollOrResize);
@@ -417,23 +426,17 @@ function AccountMenu({ user, onSettings, onLogout }) {
     const menuContent = open && menuPos
         ? createPortal(
             <>
-                {/* Backdrop — closes on tap anywhere outside */}
                 <div
                     className="fixed inset-0 z-[140] bg-black/20 backdrop-blur-[1px] sm:bg-transparent sm:backdrop-blur-0"
-                    onClick={() => {
-                        setOpen(false);
-                        setMenuPos(null);
-                    }}
+                    onClick={() => { setOpen(false); setMenuPos(null); }}
                 />
-
-                {/* Dropdown panel — anchored below the button */}
                 <div
                     ref={menuRef}
-                    className="fixed z-[150] w-72 max-w-[calc(100vw-20px)] overflow-visible rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl dark:border-slate-700 dark:bg-slate-900"
+                    className={`fixed z-[150] w-72 max-w-[calc(100vw-20px)] overflow-visible rounded-2xl border p-2 shadow-2xl ${THEME.panel}`}
                     style={{ left: menuPos.left, top: menuPos.top }}
                     onMouseDown={(e) => e.stopPropagation()}
                 >
-                    <div className="flex items-center gap-3 rounded-2xl bg-slate-50 px-3 py-3 dark:bg-slate-800">
+                    <div className={`flex items-center gap-3 rounded-2xl ${THEME.elevated} px-3 py-3`}>
                         <div
                             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
                             style={{ backgroundColor: "var(--accent-primary)" }}
@@ -441,10 +444,10 @@ function AccountMenu({ user, onSettings, onLogout }) {
                             {initials}
                         </div>
                         <div className="min-w-0">
-                            <p className="truncate text-sm font-bold text-slate-900 dark:text-white">
+                            <p className={`truncate text-sm font-bold ${THEME.textPrimary}`}>
                                 {user?.full_name || "User"}
                             </p>
-                            <p className="truncate text-xs text-slate-400 dark:text-slate-500">
+                            <p className={`truncate text-xs ${THEME.textMuted}`}>
                                 {user?.email || "Signed in"}
                             </p>
                         </div>
@@ -453,26 +456,18 @@ function AccountMenu({ user, onSettings, onLogout }) {
                     <div className="mt-2 space-y-1">
                         <button
                             type="button"
-                            onClick={() => {
-                                setOpen(false);
-                                setMenuPos(null);
-                                onSettings();
-                            }}
-                            className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800"
+                            onClick={() => { setOpen(false); setMenuPos(null); onSettings(); }}
+                            className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold transition ${THEME.textPrimary} ${THEME.hoverElevated}`}
                         >
-                            <Settings size={18} className="text-slate-400" />
+                            <Settings size={18} className={THEME.textMuted} />
                             Settings
                         </button>
 
-                        <div className="my-1 h-px bg-slate-100 dark:bg-slate-800" />
+                        <div className={`my-1 h-px ${THEME.elevated}`} />
 
                         <button
                             type="button"
-                            onClick={() => {
-                                setOpen(false);
-                                setMenuPos(null);
-                                onLogout();
-                            }}
+                            onClick={() => { setOpen(false); setMenuPos(null); onLogout(); }}
                             className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold text-red-500 transition hover:bg-red-50 dark:hover:bg-red-950/40"
                         >
                             <LogOut size={18} />
@@ -491,7 +486,7 @@ function AccountMenu({ user, onSettings, onLogout }) {
                 ref={buttonRef}
                 type="button"
                 onClick={toggleMenu}
-                className="flex items-center gap-2 rounded-full bg-slate-100 px-2 py-1.5 transition hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 sm:px-3 sm:py-2"
+                className={`flex items-center gap-2 rounded-full ${THEME.elevated} px-2 py-1.5 transition ${THEME.hoverElevated} sm:px-3 sm:py-2`}
             >
                 <div
                     className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white"
@@ -499,12 +494,12 @@ function AccountMenu({ user, onSettings, onLogout }) {
                 >
                     {initials}
                 </div>
-                <span className="hidden max-w-32 truncate text-sm font-semibold text-slate-700 dark:text-slate-200 sm:block">
+                <span className={`hidden max-w-32 truncate text-sm font-semibold sm:block ${THEME.textPrimary}`}>
                     {user?.full_name || "User"}
                 </span>
                 <ChevronDown
                     size={16}
-                    className={`hidden shrink-0 text-slate-400 transition-transform sm:block ${open ? "rotate-180" : ""}`}
+                    className={`hidden shrink-0 transition-transform sm:block ${THEME.textMuted} ${open ? "rotate-180" : ""}`}
                 />
             </button>
 
@@ -521,25 +516,25 @@ function IOSLogoutAlert({ open, onCancel, onConfirm }) {
     if (!open) return null;
     return (
         <div className="fixed inset-0 z-[110] flex items-end justify-center bg-black/30 p-3 backdrop-blur-[2px] sm:items-center sm:p-5">
-            <div className="w-full max-w-[390px] overflow-hidden rounded-[28px] border border-white/60 bg-white/95 shadow-2xl backdrop-blur-xl dark:border-slate-700 dark:bg-slate-900/95">
+            <div className={`w-full max-w-[390px] overflow-hidden rounded-[28px] border shadow-2xl backdrop-blur-xl ${THEME.panel}`}>
                 <div className="px-6 pb-5 pt-6 text-center">
-                    <h3 className="text-[17px] font-bold text-slate-900 dark:text-white">Log out?</h3>
-                    <p className="mt-2 text-sm leading-5 text-slate-500 dark:text-slate-400">
+                    <h3 className={`text-[17px] font-bold ${THEME.textPrimary}`}>Log out?</h3>
+                    <p className={`mt-2 text-sm leading-5 ${THEME.textMuted}`}>
                         Are you sure you want to log out of your account?
                     </p>
                 </div>
-                <div className="border-t border-slate-200/80 dark:border-slate-800">
+                <div className={`border-t ${THEME.border}`}>
                     <button
                         type="button"
                         onClick={onConfirm}
-                        className="flex min-h-12 w-full items-center justify-center border-b border-slate-200/80 bg-red-600 text-[16px] font-bold text-white transition hover:bg-red-700 active:scale-[0.99] dark:border-slate-800 dark:bg-red-600 dark:hover:bg-red-500"
+                        className={`flex min-h-12 w-full items-center justify-center border-b bg-red-600 text-[16px] font-bold text-white transition hover:bg-red-700 active:scale-[0.99] ${THEME.border}`}
                     >
                         Log Out
                     </button>
                     <button
                         type="button"
                         onClick={onCancel}
-                        className="flex min-h-12 w-full items-center justify-center text-[16px] font-semibold transition active:bg-slate-100 dark:active:bg-slate-800"
+                        className={`flex min-h-12 w-full items-center justify-center text-[16px] font-semibold transition active:bg-[var(--bg-elevated)]`}
                         style={{ color: "var(--accent-primary)" }}
                     >
                         Cancel
@@ -554,20 +549,20 @@ function IOSDownloadConfirmAlert({ open, onCancel, onConfirm }) {
     if (!open) return null;
     return (
         <div className="fixed inset-0 z-[110] flex items-end justify-center bg-black/30 p-3 backdrop-blur-[2px] sm:items-center sm:p-5">
-            <div className="w-full max-w-[390px] overflow-hidden rounded-[28px] border border-white/60 bg-white/95 shadow-2xl backdrop-blur-xl dark:border-slate-700 dark:bg-slate-900/95">
+            <div className={`w-full max-w-[390px] overflow-hidden rounded-[28px] border shadow-2xl backdrop-blur-xl ${THEME.panel}`}>
                 <div className="px-6 pb-5 pt-6 text-center">
-                    <h3 className="text-[17px] font-bold text-slate-900 dark:text-white">
+                    <h3 className={`text-[17px] font-bold ${THEME.textPrimary}`}>
                         Download audio?
                     </h3>
-                    <p className="mt-2 text-sm leading-5 text-slate-500 dark:text-slate-400">
+                    <p className={`mt-2 text-sm leading-5 ${THEME.textMuted}`}>
                         The audio file will be saved to your device.
                     </p>
                 </div>
-                <div className="border-t border-slate-200/80 dark:border-slate-800">
+                <div className={`border-t ${THEME.border}`}>
                     <button
                         type="button"
                         onClick={onConfirm}
-                        className="flex min-h-12 w-full items-center justify-center border-b border-slate-200/80 text-[16px] font-bold transition active:bg-slate-100 dark:border-slate-800 dark:active:bg-slate-800"
+                        className={`flex min-h-12 w-full items-center justify-center border-b text-[16px] font-bold transition active:bg-[var(--bg-elevated)] ${THEME.border}`}
                         style={{ color: "var(--accent-primary)" }}
                     >
                         Download
@@ -575,7 +570,7 @@ function IOSDownloadConfirmAlert({ open, onCancel, onConfirm }) {
                     <button
                         type="button"
                         onClick={onCancel}
-                        className="flex min-h-12 w-full items-center justify-center text-[16px] font-semibold text-slate-500 transition active:bg-slate-100 dark:text-slate-400 dark:active:bg-slate-800"
+                        className={`flex min-h-12 w-full items-center justify-center text-[16px] font-semibold transition active:bg-[var(--bg-elevated)] ${THEME.textMuted}`}
                     >
                         Cancel
                     </button>
@@ -606,7 +601,7 @@ function DownloadProgressCard({ state, progress, onCancel, onClose }) {
 
     return (
         <div className="pointer-events-none fixed bottom-3 right-3 z-[150] w-[calc(100%-24px)] max-w-[360px] sm:bottom-5 sm:right-5 sm:w-[360px]">
-            <div className="pointer-events-auto overflow-hidden rounded-2xl border border-slate-200/80 bg-white/95 shadow-[0_18px_50px_rgba(15,23,42,0.18)] backdrop-blur-xl dark:border-slate-700 dark:bg-slate-900/95">
+            <div className={`pointer-events-auto overflow-hidden rounded-2xl border shadow-[0_18px_50px_rgba(15,23,42,0.18)] backdrop-blur-xl ${THEME.panel}`}>
                 <div className="flex items-center gap-3 px-4 py-3">
                     <div
                         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white"
@@ -622,14 +617,14 @@ function DownloadProgressCard({ state, progress, onCancel, onClose }) {
                     </div>
 
                     <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-bold text-slate-900 dark:text-white">
+                        <p className={`truncate text-sm font-bold ${THEME.textPrimary}`}>
                             {isDownloading && "Downloading audio…"}
                             {isSuccess && "Download complete"}
                             {isError && "Download failed"}
                             {isCancelled && "Download cancelled"}
                         </p>
 
-                        <p className="truncate text-[11px] text-slate-400 dark:text-slate-500">
+                        <p className={`truncate text-[11px] ${THEME.textMuted}`}>
                             {isDownloading && `${percent}% · text-to-speech.mp3`}
                             {isSuccess && "Saved to your device"}
                             {isError && "Please try again"}
@@ -641,7 +636,7 @@ function DownloadProgressCard({ state, progress, onCancel, onClose }) {
                         <button
                             type="button"
                             onClick={onCancel}
-                            className="flex h-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-[11px] font-bold text-slate-600 transition hover:bg-slate-50 active:scale-95 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                            className={`flex h-8 shrink-0 items-center justify-center rounded-lg border px-3 text-[11px] font-bold transition active:scale-95 ${THEME.border} ${THEME.elevated} ${THEME.textPrimary}`}
                         >
                             Cancel
                         </button>
@@ -649,7 +644,7 @@ function DownloadProgressCard({ state, progress, onCancel, onClose }) {
                         <button
                             type="button"
                             onClick={onClose}
-                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-800"
+                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition ${THEME.textMuted} ${THEME.hoverElevated}`}
                             aria-label="Dismiss"
                         >
                             <X size={15} />
@@ -657,7 +652,7 @@ function DownloadProgressCard({ state, progress, onCancel, onClose }) {
                     )}
                 </div>
 
-                <div className="h-1 w-full bg-slate-100 dark:bg-slate-800">
+                <div className={`h-1 w-full ${THEME.elevated}`}>
                     <div
                         className="h-full transition-[width] duration-200 ease-out"
                         style={{
@@ -755,6 +750,7 @@ export default function Dashboard() {
     const [activeChatId, setActiveChatId] = useState(null);
     const [logoutAlert, setLogoutAlert] = useState(false);
     const [systemAudioReady, setSystemAudioReady] = useState(false);
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
     const [downloadConfirmOpen, setDownloadConfirmOpen] = useState(false);
     const [downloadState, setDownloadState] = useState(null);
@@ -772,6 +768,27 @@ export default function Dashboard() {
         puter.quiet = true;
 
         return () => { if (window.puter === puter) delete window.puter; };
+    }, []);
+
+    /* Track sidebar collapsed state so we can shift content padding */
+    useEffect(() => {
+        try {
+            setSidebarCollapsed(localStorage.getItem("tts_sidebar_collapsed_v1") === "1");
+        } catch {
+            setSidebarCollapsed(false);
+        }
+
+        const handleSidebarEvent = (event) => {
+            if (event?.detail && typeof event.detail.collapsed === "boolean") {
+                setSidebarCollapsed(event.detail.collapsed);
+            }
+        };
+
+        window.addEventListener("tts:sidebar", handleSidebarEvent);
+
+        return () => {
+            window.removeEventListener("tts:sidebar", handleSidebarEvent);
+        };
     }, []);
 
     useEffect(() => {
@@ -800,7 +817,6 @@ export default function Dashboard() {
         setToast(null);
     };
 
-    /* Welcome toast — driven by a custom event from AuthContext. */
     useEffect(() => {
         const handleWelcome = (event) => {
             const fullName =
@@ -824,7 +840,6 @@ export default function Dashboard() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    /* Load languages */
     useEffect(() => {
         const loadLanguages = async () => {
             try {
@@ -888,7 +903,6 @@ export default function Dashboard() {
         loadLanguages();
     }, []);
 
-    /* Load voices */
     useEffect(() => {
         const loadVoices = async () => {
             setVoicesLoading(true);
@@ -942,7 +956,6 @@ export default function Dashboard() {
         loadVoices();
     }, []);
 
-    /* Load history */
     useEffect(() => {
         const loadHistory = async () => {
             if (!token) { setHistoryLoading(false); return; }
@@ -962,7 +975,6 @@ export default function Dashboard() {
         loadHistory();
     }, [token]);
 
-    /* Cleanup audio blob */
     useEffect(() => {
         return () => {
             if (audioUrl && audioUrl.startsWith("blob:")) URL.revokeObjectURL(audioUrl);
@@ -990,8 +1002,6 @@ export default function Dashboard() {
     const universalVoice = createUniversalVoice(language);
     const systemVoice = createSystemVoice(language);
 
-    // Order: real voices first (downloadable), then xai fallbacks (downloadable),
-    // then universal (downloadable), then system (NOT downloadable) last.
     const languageVoices = [...realLanguageVoices, ...xaiFallbackVoices, universalVoice, systemVoice];
 
     const uniqueLanguageVoices = languageVoices.filter(
@@ -1026,7 +1036,6 @@ export default function Dashboard() {
         const currentVoiceStillValid = uniqueLanguageVoices.some((item) => item.id === voice);
         if (uniqueLanguageVoices.length === 0) { setVoice(""); return; }
         if (!currentVoiceStillValid) {
-            // Prefer a downloadable (non-system) voice as default
             const downloadable = uniqueLanguageVoices.find((item) => item.provider !== "system");
             setVoice(downloadable ? downloadable.id : uniqueLanguageVoices[0].id);
         }
@@ -1041,7 +1050,6 @@ export default function Dashboard() {
         showToast(message, "error", 4500);
     };
 
-    /* Translate */
     const translateText = async (textValue) => {
         const targetLanguage = selectedLanguage?.name || language;
         const prompt = `
@@ -1078,7 +1086,6 @@ ${textValue}
         return translated;
     };
 
-    /* System voice (browser speechSynthesis — NOT downloadable) */
     const speakWithSystemVoice = async (textValue) => {
         if (!window.speechSynthesis) throw new Error("Your browser does not support system speech synthesis.");
         window.speechSynthesis.cancel();
@@ -1120,7 +1127,6 @@ ${textValue}
         });
     };
 
-    /* Generate with voice */
     const generateWithVoice = async (textValue, voiceData) => {
         const provider = voiceData.provider;
         const originalVoiceId = voiceData.originalId;
@@ -1176,7 +1182,6 @@ ${textValue}
         return await puter.ai.txt2speech(textValue, { provider, voice: originalVoiceId });
     };
 
-    /* Fallback: always prefer a downloadable provider before falling back to system voice */
     const generateFallbackSpeech = async (translatedText) => {
         const xaiLanguage = getXaiLanguageCode(language);
         if (xaiLanguage) {
@@ -1189,11 +1194,9 @@ ${textValue}
             }
         }
 
-        // Last resort: system voice (not downloadable)
         return await speakWithSystemVoice(translatedText);
     };
 
-    /* Save history helper */
     const saveHistoryEntry = async (historyPayload) => {
         const isEditingExistingChat =
             activeChatId !== null &&
@@ -1240,7 +1243,6 @@ ${textValue}
         }
     };
 
-    /* Generate handler */
     const handleGenerate = async () => {
         if (!text.trim()) { showError("Please enter some text before generating speech."); return; }
         if (characterCount > MAX_CHARACTERS) {
@@ -1398,7 +1400,6 @@ ${textValue}
         }
     };
 
-    /* Download handlers */
     const openDownloadConfirm = () => {
         if (!audioUrl) {
             showError("Download is available only for generated audio files. System voice cannot be downloaded — please choose a downloadable voice.");
@@ -1558,7 +1559,6 @@ ${textValue}
     const isSystemVoiceActive = systemAudioReady && !audioUrl;
     const isSystemVoiceSelected = selectedVoice?.provider === "system";
 
-    /* Suggestion: pick the first downloadable voice to switch to */
     const suggestedDownloadableVoice =
         uniqueLanguageVoices.find((item) => item.provider !== "system") || null;
 
@@ -1577,12 +1577,8 @@ ${textValue}
         );
     };
 
-    /* ------------------------------------------------------------------ */
-    /*  Render                                                             */
-    /* ------------------------------------------------------------------ */
-
     return (
-        <div className="min-h-screen bg-[#f5f7fb] text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-100">
+        <div className={`min-h-screen transition-colors ${THEME.page}`}>
             <IOSToast toast={toast} onClose={hideToast} />
 
             <Sidebar
@@ -1598,14 +1594,24 @@ ${textValue}
                 onLogout={() => setLogoutAlert(true)}
             />
 
-            <div className="min-h-screen lg:pl-[285px]">
-                <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl transition-colors dark:border-slate-800 dark:bg-slate-900/90">
+            {/* 
+              Content wrapper:
+              - On mobile: no left padding (sidebar is off-canvas)
+              - On desktop: padding matches sidebar width (72px collapsed / 285px expanded)
+              - The `transition-[padding]` makes the shift smooth when collapsing
+            */}
+            <div
+                className={`min-h-screen transition-[padding-left] duration-300 ease-out ${
+                    sidebarCollapsed ? "lg:pl-[72px]" : "lg:pl-[285px]"
+                }`}
+            >
+                <header className={`sticky top-0 z-30 border-b backdrop-blur-xl ${THEME.panel}`}>
                     <div className="flex min-h-[72px] items-center justify-between px-4 sm:px-6 lg:px-8">
                         <div className="flex min-w-0 items-center gap-3">
                             <button
                                 type="button"
                                 onClick={() => setMobileSidebarOpen(true)}
-                                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 lg:hidden"
+                                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border shadow-sm transition ${THEME.border} ${THEME.elevated} ${THEME.textPrimary} lg:hidden`}
                             >
                                 <Menu size={19} />
                             </button>
@@ -1618,10 +1624,10 @@ ${textValue}
                             </div>
 
                             <div className="min-w-0">
-                                <h1 className="truncate text-base font-bold tracking-tight text-slate-900 dark:text-white sm:text-lg">
+                                <h1 className={`truncate text-base font-bold tracking-tight sm:text-lg ${THEME.textPrimary}`}>
                                     Text-to-Speech
                                 </h1>
-                                <p className="hidden text-xs text-slate-500 dark:text-slate-400 sm:block">
+                                <p className={`hidden text-xs sm:block ${THEME.textMuted}`}>
                                     Natural speech generation
                                 </p>
                             </div>
@@ -1637,20 +1643,20 @@ ${textValue}
 
                 <main className="mx-auto max-w-5xl px-3 py-5 sm:px-6 sm:py-7 lg:px-8">
                     <div className="mb-6">
-                        <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
+                        <h2 className={`text-2xl font-bold tracking-tight sm:text-3xl ${THEME.textPrimary}`}>
                             Create speech
                         </h2>
-                        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 sm:text-base">
+                        <p className={`mt-1 text-sm sm:text-base ${THEME.textMuted}`}>
                             Turn your text into natural-sounding audio.
                         </p>
                     </div>
 
                     <section>
-                        <div className="overflow-visible rounded-[28px] border border-slate-200 bg-white p-4 shadow-[0_8px_35px_rgba(15,23,42,0.05)] transition-colors dark:border-slate-800 dark:bg-slate-900 sm:p-6 lg:p-7">
+                        <div className={`overflow-visible rounded-[28px] border p-4 shadow-[0_8px_35px_rgba(15,23,42,0.05)] transition-colors sm:p-6 lg:p-7 ${THEME.panel}`}>
                             <div className="mb-5 flex items-center justify-between gap-3">
                                 <div>
-                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white sm:text-xl">Your text</h3>
-                                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
+                                    <h3 className={`text-lg font-bold sm:text-xl ${THEME.textPrimary}`}>Your text</h3>
+                                    <p className={`mt-1 text-xs sm:text-sm ${THEME.textMuted}`}>
                                         Write or paste the content you want to hear.
                                     </p>
                                 </div>
@@ -1672,13 +1678,13 @@ ${textValue}
                                     maxLength={MAX_CHARACTERS}
                                     rows={12}
                                     placeholder="Type or paste your text here..."
-                                    className="min-h-[270px] w-full resize-y rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4 text-[15px] leading-7 text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-transparent focus:bg-white focus:shadow-[0_0_0_3px_var(--accent-soft)] dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:bg-slate-800 sm:min-h-[310px] sm:px-5 sm:py-5 sm:text-base"
+                                    className={`min-h-[270px] w-full resize-y rounded-[22px] border px-4 py-4 text-[15px] leading-7 outline-none transition placeholder:text-[var(--text-muted)] focus:border-transparent focus:bg-[var(--bg-surface)] focus:shadow-[0_0_0_3px_var(--accent-soft)] sm:min-h-[310px] sm:px-5 sm:py-5 sm:text-base ${THEME.border} ${THEME.elevated} ${THEME.textPrimary}`}
                                 />
                                 <div className="pointer-events-none absolute bottom-3 left-3 right-3 flex items-end justify-between sm:bottom-4 sm:left-4 sm:right-4">
-                                    <span className="rounded-lg bg-white/90 px-2 py-1 text-[11px] font-medium text-slate-400 shadow-sm backdrop-blur dark:bg-slate-800/80 dark:text-slate-400">
+                                    <span className={`rounded-lg bg-[var(--bg-surface)]/90 px-2 py-1 text-[11px] font-medium shadow-sm backdrop-blur ${THEME.textMuted}`}>
                                         {wordCount} {wordCount === 1 ? "word" : "words"}
                                     </span>
-                                    <span className={`rounded-lg bg-white/90 px-2 py-1 text-[11px] font-semibold shadow-sm backdrop-blur dark:bg-slate-800/80 ${remainingCharacters < 300 ? "text-orange-500" : "text-slate-400"}`}>
+                                    <span className={`rounded-lg bg-[var(--bg-surface)]/90 px-2 py-1 text-[11px] font-semibold shadow-sm backdrop-blur ${remainingCharacters < 300 ? "text-orange-500" : THEME.textMuted}`}>
                                         {characterCount.toLocaleString()} / {MAX_CHARACTERS.toLocaleString()}
                                     </span>
                                 </div>
@@ -1700,7 +1706,7 @@ ${textValue}
                                         <div className="flex min-w-0 items-center gap-3">
                                             <span className="text-xl">{option.flag}</span>
                                             <p
-                                                className={`truncate text-sm font-semibold ${option.value === language ? "" : "text-slate-800 dark:text-slate-100"}`}
+                                                className={`truncate text-sm font-semibold ${option.value === language ? "" : THEME.textPrimary}`}
                                                 style={option.value === language ? { color: "var(--accent-primary)" } : undefined}
                                             >
                                                 {option.label}
@@ -1723,19 +1729,19 @@ ${textValue}
                                     renderOption={(option) => (
                                         <div className="min-w-0">
                                             <p
-                                                className={`truncate text-sm font-semibold ${option.value === voice ? "" : "text-slate-800 dark:text-slate-100"}`}
+                                                className={`truncate text-sm font-semibold ${option.value === voice ? "" : THEME.textPrimary}`}
                                                 style={option.value === voice ? { color: "var(--accent-primary)" } : undefined}
                                             >
                                                 {option.label}
                                             </p>
-                                            <p className="truncate text-[11px] text-slate-400 dark:text-slate-500">{option.description}</p>
+                                            <p className={`truncate text-[11px] ${THEME.textMuted}`}>{option.description}</p>
                                         </div>
                                     )}
                                 />
                             </div>
 
                             {selectedLanguage && (
-                                <div className="mt-5 rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-800/60">
+                                <div className={`mt-5 rounded-2xl px-4 py-3 ${THEME.elevated}`}>
                                     <div className="flex items-center gap-2">
                                         <div
                                             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
@@ -1744,8 +1750,8 @@ ${textValue}
                                             <Globe2 size={15} />
                                         </div>
                                         <div className="min-w-0">
-                                            <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">Selected language</p>
-                                            <p className="truncate text-xs text-slate-400 dark:text-slate-500">
+                                            <p className={`text-xs font-semibold ${THEME.textPrimary}`}>Selected language</p>
+                                            <p className={`truncate text-xs ${THEME.textMuted}`}>
                                                 {selectedLanguage.flag || getLanguageFlag(selectedLanguage.code)}{" "}
                                                 {selectedLanguage.name}
                                             </p>
@@ -1799,7 +1805,7 @@ ${textValue}
                                 <button
                                     type="button"
                                     onClick={handleClear}
-                                    className="flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-600 transition hover:bg-slate-50 active:scale-[0.99] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 sm:text-base"
+                                    className={`flex min-h-12 items-center justify-center gap-2 rounded-2xl border px-5 py-3 text-sm font-bold transition active:scale-[0.99] sm:text-base ${THEME.border} ${THEME.panel} ${THEME.textPrimary} hover:bg-[var(--bg-elevated)]`}
                                 >
                                     <RotateCcw size={17} />
                                     Clear
@@ -1823,10 +1829,10 @@ ${textValue}
                                                 <Volume2 size={19} />
                                             </div>
                                             <div>
-                                                <h4 className="text-sm font-bold text-slate-900 dark:text-white sm:text-base">
+                                                <h4 className={`text-sm font-bold sm:text-base ${THEME.textPrimary}`}>
                                                     {audioUrl ? "Generated audio" : "System voice playback"}
                                                 </h4>
-                                                <p className="text-xs text-slate-500 dark:text-slate-400">
+                                                <p className={`text-xs ${THEME.textMuted}`}>
                                                     {selectedLanguage?.name || "Selected language"} speech
                                                 </p>
                                             </div>
@@ -1845,7 +1851,7 @@ ${textValue}
                                                 </button>
                                             ) : (
                                                 <div
-                                                    className="flex min-h-10 items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-white/60 px-4 py-2 text-xs font-semibold text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-400"
+                                                    className={`flex min-h-10 items-center justify-center gap-2 rounded-xl border border-dashed px-4 py-2 text-xs font-semibold ${THEME.border} ${THEME.elevated} ${THEME.textMuted}`}
                                                     title="System voice cannot be downloaded. Switch to a Puter voice."
                                                 >
                                                     <Download size={14} />
@@ -1872,13 +1878,13 @@ ${textValue}
                                         />
                                     )}
 
-                                    <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100 dark:bg-slate-800 dark:ring-slate-700">
+                                    <div className={`rounded-2xl border p-4 shadow-sm ${THEME.border} ${THEME.panel}`}>
                                         <div className="flex items-center justify-center gap-3 sm:gap-5">
                                             <button
                                                 type="button"
                                                 onClick={skipBackward}
                                                 disabled={!audioUrl}
-                                                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-700 transition hover:bg-slate-200 active:scale-90 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
+                                                className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition active:scale-90 disabled:cursor-not-allowed disabled:opacity-40 ${THEME.elevated} ${THEME.textPrimary} hover:bg-[var(--bg-surface)]`}
                                                 title={audioUrl ? "Skip backward 10 seconds" : "Not available for system voice"}
                                             >
                                                 <div className="relative flex items-center justify-center">
@@ -1901,7 +1907,7 @@ ${textValue}
                                                 type="button"
                                                 onClick={skipForward}
                                                 disabled={!audioUrl}
-                                                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-700 transition hover:bg-slate-200 active:scale-90 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
+                                                className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition active:scale-90 disabled:cursor-not-allowed disabled:opacity-40 ${THEME.elevated} ${THEME.textPrimary} hover:bg-[var(--bg-surface)]`}
                                                 title={audioUrl ? "Skip forward 10 seconds" : "Not available for system voice"}
                                             >
                                                 <div className="relative flex items-center justify-center">
@@ -1924,13 +1930,13 @@ ${textValue}
                                                         className="h-1.5 w-full cursor-pointer"
                                                         style={{ accentColor: "var(--accent-primary)" }}
                                                     />
-                                                    <div className="mt-2 flex items-center justify-between text-[11px] font-semibold text-slate-400 dark:text-slate-500">
+                                                    <div className={`mt-2 flex items-center justify-between text-[11px] font-semibold ${THEME.textMuted}`}>
                                                         <span>{formatTime(currentTime)}</span>
                                                         <span>{formatTime(duration)}</span>
                                                     </div>
                                                 </>
                                             ) : (
-                                                <div className="flex flex-col items-center justify-center gap-1.5 rounded-xl bg-slate-50 px-3 py-2.5 text-[11px] font-semibold text-slate-400 dark:bg-slate-800/60 dark:text-slate-500">
+                                                <div className={`flex flex-col items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-[11px] font-semibold ${THEME.elevated} ${THEME.textMuted}`}>
                                                     <div className="flex items-center gap-2">
                                                         <span
                                                             className="h-2 w-2 animate-pulse rounded-full"
@@ -1938,14 +1944,14 @@ ${textValue}
                                                         />
                                                         System voice — playback controlled by your device
                                                     </div>
-                                                    <span className="text-[10px] font-medium text-slate-400/80 dark:text-slate-500/80">
+                                                    <span className={`text-[10px] font-medium ${THEME.textMuted}`}>
                                                         No seek bar or duration available
                                                     </span>
                                                 </div>
                                             )}
                                         </div>
 
-                                        <div className="mt-3 flex items-center justify-center gap-4 text-[11px] font-semibold text-slate-400 dark:text-slate-500">
+                                        <div className={`mt-3 flex items-center justify-center gap-4 text-[11px] font-semibold ${THEME.textMuted}`}>
                                             <span>−10 sec</span>
                                             <span>Play / Pause</span>
                                             <span>+10 sec</span>
@@ -1970,7 +1976,7 @@ ${textValue}
                 </main>
 
                 <footer className="px-4 py-6 text-center">
-                    <p className="text-xs text-slate-400 dark:text-slate-500">Text-to-Speech Application</p>
+                    <p className={`text-xs ${THEME.textMuted}`}>Text-to-Speech Application</p>
                 </footer>
             </div>
 
@@ -1994,4 +2000,4 @@ ${textValue}
             />
         </div>
     );
-}
+}       

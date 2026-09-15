@@ -10,6 +10,7 @@ import {
   Lock,
   LogOut,
   Mail,
+  Monitor,
   Moon,
   Palette,
   Pencil,
@@ -23,6 +24,20 @@ import { useSettings } from "../context/SettingsContext";
 import { updateProfile, updatePassword } from "../services/api";
 
 /* ------------------------------------------------------------------ */
+/*  Theme-aware utility classes                                        */
+/* ------------------------------------------------------------------ */
+
+const THEME = {
+  page: "bg-[var(--bg-base)] text-[var(--text-primary)]",
+  panel: "bg-[var(--bg-surface)] border-[var(--border-soft)]",
+  elevated: "bg-[var(--bg-elevated)]",
+  textPrimary: "text-[var(--text-primary)]",
+  textMuted: "text-[var(--text-muted)]",
+  border: "border-[var(--border-soft)]",
+  hoverElevated: "hover:bg-[var(--bg-elevated)]",
+};
+
+/* ------------------------------------------------------------------ */
 /*  Logout confirm alert                                               */
 /* ------------------------------------------------------------------ */
 
@@ -31,22 +46,22 @@ function IOSLogoutAlert({ open, onCancel, onConfirm }) {
 
   return (
     <div className="fixed inset-0 z-[200] flex items-end justify-center bg-black/30 p-3 backdrop-blur-[2px] sm:items-center sm:p-5">
-      <div className="w-full max-w-[390px] overflow-hidden rounded-[28px] border border-white/60 bg-white/95 shadow-2xl backdrop-blur-xl dark:border-slate-700 dark:bg-slate-900/95">
+      <div className={`w-full max-w-[390px] overflow-hidden rounded-[28px] border shadow-2xl backdrop-blur-xl ${THEME.panel}`}>
         <div className="px-6 pb-5 pt-6 text-center">
-          <h3 className="text-[17px] font-bold text-slate-900 dark:text-white">
+          <h3 className={`text-[17px] font-bold ${THEME.textPrimary}`}>
             Log out?
           </h3>
 
-          <p className="mt-2 text-sm leading-5 text-slate-500 dark:text-slate-400">
+          <p className={`mt-2 text-sm leading-5 ${THEME.textMuted}`}>
             Are you sure you want to log out of your account?
           </p>
         </div>
 
-        <div className="border-t border-slate-200/80 dark:border-slate-800">
+        <div className={`border-t ${THEME.border}`}>
           <button
             type="button"
             onClick={onConfirm}
-            className="flex min-h-12 w-full items-center justify-center border-b border-slate-200/80 bg-red-600 text-[16px] font-bold text-white transition hover:bg-red-700 active:scale-[0.99] dark:border-slate-800 dark:bg-red-600 dark:hover:bg-red-500"
+            className={`flex min-h-12 w-full items-center justify-center border-b bg-red-600 text-[16px] font-bold text-white transition hover:bg-red-700 active:scale-[0.99] ${THEME.border}`}
           >
             Log Out
           </button>
@@ -54,7 +69,7 @@ function IOSLogoutAlert({ open, onCancel, onConfirm }) {
           <button
             type="button"
             onClick={onCancel}
-            className="flex min-h-12 w-full items-center justify-center text-[16px] font-semibold text-[var(--accent-primary)] transition active:bg-slate-100 dark:active:bg-slate-800"
+            className="flex min-h-12 w-full items-center justify-center text-[16px] font-semibold text-[var(--accent-primary)] transition active:bg-[var(--bg-elevated)]"
           >
             Cancel
           </button>
@@ -73,24 +88,24 @@ function IOSPasswordConfirmAlert({ open, loading, onCancel, onConfirm }) {
 
   return (
     <div className="fixed inset-0 z-[200] flex items-end justify-center bg-black/30 p-3 backdrop-blur-[2px] sm:items-center sm:p-5">
-      <div className="w-full max-w-[390px] overflow-hidden rounded-[28px] border border-white/60 bg-white/95 shadow-2xl backdrop-blur-xl dark:border-slate-700 dark:bg-slate-900/95">
+      <div className={`w-full max-w-[390px] overflow-hidden rounded-[28px] border shadow-2xl backdrop-blur-xl ${THEME.panel}`}>
         <div className="px-6 pb-5 pt-6 text-center">
-          <h3 className="text-[17px] font-bold text-slate-900 dark:text-white">
+          <h3 className={`text-[17px] font-bold ${THEME.textPrimary}`}>
             Update password?
           </h3>
 
-          <p className="mt-2 text-sm leading-5 text-slate-500 dark:text-slate-400">
+          <p className={`mt-2 text-sm leading-5 ${THEME.textMuted}`}>
             Your account password will be changed. You will use the new
             password the next time you sign in.
           </p>
         </div>
 
-        <div className="border-t border-slate-200/80 dark:border-slate-800">
+        <div className={`border-t ${THEME.border}`}>
           <button
             type="button"
             disabled={loading}
             onClick={onConfirm}
-            className="flex min-h-12 w-full items-center justify-center gap-2 border-b border-slate-200/80 text-[16px] font-bold transition active:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-800 dark:active:bg-slate-800"
+            className={`flex min-h-12 w-full items-center justify-center gap-2 border-b text-[16px] font-bold transition active:bg-[var(--bg-elevated)] disabled:cursor-not-allowed disabled:opacity-60 ${THEME.border}`}
             style={{ color: "var(--accent-primary)" }}
           >
             {loading ? (
@@ -113,7 +128,7 @@ function IOSPasswordConfirmAlert({ open, loading, onCancel, onConfirm }) {
             type="button"
             disabled={loading}
             onClick={onCancel}
-            className="flex min-h-12 w-full items-center justify-center text-[16px] font-semibold text-slate-500 transition active:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-slate-400 dark:active:bg-slate-800"
+            className={`flex min-h-12 w-full items-center justify-center text-[16px] font-semibold transition active:bg-[var(--bg-elevated)] disabled:cursor-not-allowed disabled:opacity-50 ${THEME.textMuted}`}
           >
             Cancel
           </button>
@@ -124,7 +139,7 @@ function IOSPasswordConfirmAlert({ open, loading, onCancel, onConfirm }) {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Snackbar (top-right)                                               */
+/*  Snackbar (top-right) — unchanged (semantic colors)                 */
 /* ------------------------------------------------------------------ */
 
 function Snackbar({ toast, onClose }) {
@@ -214,6 +229,21 @@ function Snackbar({ toast, onClose }) {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Icon mapping for each appearance option                            */
+/* ------------------------------------------------------------------ */
+
+const APPEARANCE_ICONS = {
+  light: Sun,
+  dark: Moon,
+  system: Monitor,
+  midnight: Moon,
+  sepia: Sun,
+  nord: Moon,
+  forest: Moon,
+  rose: Sun,
+};
+
+/* ------------------------------------------------------------------ */
 /*  Account                                                            */
 /* ------------------------------------------------------------------ */
 
@@ -226,6 +256,7 @@ export default function Account() {
     setAppearance,
     setAccentColor,
     accentColors,
+    appearanceThemes,
   } = useSettings();
 
   /* -------------------------- name edit state -------------------------- */
@@ -280,7 +311,6 @@ export default function Account() {
     }
   }, [changingPassword]);
 
-  /* Cleanup on unmount */
   useEffect(() => {
     return () => {
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
@@ -311,28 +341,25 @@ export default function Account() {
     setToast(null);
   };
 
-  const appearanceOptions = [
-    {
-      id: "light",
-      name: "Light",
-      description: "Use the light interface",
-      icon: Sun,
-    },
-    {
-      id: "dark",
-      name: "Dark",
-      description: "Use the dark interface",
-      icon: Moon,
-    },
-  ];
+  /* ------------------------------------------------------------------ */
+  /*  Appearance + Accent options                                        */
+  /* ------------------------------------------------------------------ */
 
-  const accentOptions = [
-    { id: "blue", name: "Blue" },
-    { id: "purple", name: "Purple" },
-    { id: "green", name: "Green" },
-    { id: "orange", name: "Orange" },
-    { id: "pink", name: "Pink" },
-  ];
+  const appearanceOptions = Object.entries(appearanceThemes || {}).map(
+    ([id, theme]) => ({
+      id,
+      name: theme.label,
+      description: theme.description,
+      icon: APPEARANCE_ICONS[id] || Sun,
+    })
+  );
+
+  const accentOptions = Object.entries(accentColors || {}).map(
+    ([id, color]) => ({
+      id,
+      name: color.label || id.charAt(0).toUpperCase() + id.slice(1),
+    })
+  );
 
   /* -------------------------- name handlers ---------------------------- */
   const handleEditNameStart = () => {
@@ -462,8 +489,6 @@ export default function Account() {
     return null;
   };
 
-  /* Called by the "Update password" button — validates, then opens the
-     confirmation alert. */
   const handleChangePasswordRequest = () => {
     setPasswordError("");
     setPasswordSuccess("");
@@ -478,13 +503,11 @@ export default function Account() {
     setPasswordAlert(true);
   };
 
-  /* Called when the user confirms inside the alert. */
   const handleChangePasswordConfirm = async () => {
     setPasswordError("");
     setPasswordSuccess("");
     setSavingPassword(true);
 
-    /* Show a top-right snackbar in "loading" mode for the whole request */
     showToast("Updating password, please wait…", "loading");
 
     try {
@@ -501,10 +524,8 @@ export default function Account() {
       resetPasswordForm();
       setChangingPassword(false);
 
-      /* Success snackbar replaces the loading one */
       showToast("Password updated successfully.", "success", 3200);
 
-      /* Clear the inline success banner after a while too */
       setTimeout(() => setPasswordSuccess(""), 3500);
     } catch (err) {
       console.error("UPDATE PASSWORD ERROR:", err);
@@ -517,7 +538,6 @@ export default function Account() {
       setPasswordAlert(false);
       setPasswordError(message);
 
-      /* Error snackbar replaces the loading one */
       showToast(message, "error", 5000);
     } finally {
       setSavingPassword(false);
@@ -544,8 +564,7 @@ export default function Account() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 transition-colors sm:p-6 lg:p-8 dark:bg-slate-950">
-      {/* Top-right snackbar (loading / success / error) */}
+    <div className={`min-h-screen p-4 transition-colors sm:p-6 lg:p-8 ${THEME.page}`}>
       <Snackbar toast={toast} onClose={hideToast} />
 
       <div className="mx-auto max-w-3xl">
@@ -554,25 +573,25 @@ export default function Account() {
           <button
             type="button"
             onClick={() => navigate("/dashboard")}
-            className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 active:scale-95 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+            className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border shadow-sm transition active:scale-95 ${THEME.border} ${THEME.elevated} ${THEME.textPrimary} ${THEME.hoverElevated}`}
             aria-label="Back to dashboard"
           >
             <ArrowLeft size={18} />
           </button>
 
           <div className="min-w-0">
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+            <h1 className={`text-2xl font-bold ${THEME.textPrimary}`}>
               Account
             </h1>
 
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            <p className={`mt-1 text-sm ${THEME.textMuted}`}>
               Manage your account and application settings
             </p>
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div className="flex flex-col items-center border-b border-slate-200 px-6 py-8 dark:border-slate-800">
+        <div className={`overflow-hidden rounded-3xl border shadow-sm ${THEME.panel}`}>
+          <div className={`flex flex-col items-center border-b px-6 py-8 ${THEME.border}`}>
             <div
               className="flex h-24 w-24 items-center justify-center rounded-full"
               style={{
@@ -583,11 +602,11 @@ export default function Account() {
               <User className="h-12 w-12" />
             </div>
 
-            <h2 className="mt-4 text-xl font-bold text-slate-900 dark:text-white">
+            <h2 className={`mt-4 text-xl font-bold ${THEME.textPrimary}`}>
               {user?.full_name || "User"}
             </h2>
 
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            <p className={`mt-1 text-sm ${THEME.textMuted}`}>
               {user?.email || "No email available"}
             </p>
           </div>
@@ -600,14 +619,14 @@ export default function Account() {
                   style={{ color: "var(--accent-primary)" }}
                 />
 
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                <h3 className={`text-lg font-semibold ${THEME.textPrimary}`}>
                   Account Information
                 </h3>
               </div>
 
               <div className="space-y-4">
                 {/* Full Name */}
-                <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800">
+                <div className={`rounded-2xl p-4 ${THEME.elevated}`}>
                   <div className="flex items-center gap-4">
                     <div
                       className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
@@ -620,7 +639,7 @@ export default function Account() {
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-medium text-slate-400 dark:text-slate-500">
+                      <p className={`text-xs font-medium ${THEME.textMuted}`}>
                         Full Name
                       </p>
 
@@ -636,7 +655,7 @@ export default function Account() {
                             maxLength={120}
                             disabled={savingName}
                             placeholder="Enter your name"
-                            className="h-10 w-full flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-[var(--accent-primary)] focus:shadow-[0_0_0_3px_var(--accent-soft)] disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
+                            className={`h-10 w-full flex-1 rounded-xl border px-3 text-sm font-semibold outline-none transition focus:border-[var(--accent-primary)] focus:shadow-[0_0_0_3px_var(--accent-soft)] disabled:opacity-60 ${THEME.border} ${THEME.panel} ${THEME.textPrimary} placeholder:text-[var(--text-muted)]`}
                           />
 
                           <div className="flex items-center gap-2">
@@ -666,7 +685,7 @@ export default function Account() {
                               type="button"
                               onClick={handleEditNameCancel}
                               disabled={savingName}
-                              className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 transition hover:bg-slate-50 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 sm:flex-none"
+                              className={`flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border px-3 text-xs font-bold transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none ${THEME.border} ${THEME.panel} ${THEME.textPrimary} ${THEME.hoverElevated}`}
                             >
                               <X size={15} strokeWidth={2.5} />
                               Cancel
@@ -675,14 +694,14 @@ export default function Account() {
                         </div>
                       ) : (
                         <div className="mt-1 flex items-center justify-between gap-2">
-                          <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-200">
+                          <p className={`truncate text-sm font-semibold ${THEME.textPrimary}`}>
                             {user?.full_name || "Not available"}
                           </p>
 
                           <button
                             type="button"
                             onClick={handleEditNameStart}
-                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-200 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200"
+                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition ${THEME.textMuted} ${THEME.hoverElevated}`}
                             aria-label="Edit name"
                             title="Edit name"
                           >
@@ -707,7 +726,7 @@ export default function Account() {
                 </div>
 
                 {/* Email */}
-                <div className="flex items-center gap-4 rounded-2xl bg-slate-50 p-4 dark:bg-slate-800">
+                <div className={`flex items-center gap-4 rounded-2xl p-4 ${THEME.elevated}`}>
                   <div
                     className="flex h-11 w-11 items-center justify-center rounded-xl"
                     style={{
@@ -719,18 +738,18 @@ export default function Account() {
                   </div>
 
                   <div className="min-w-0">
-                    <p className="text-xs font-medium text-slate-400 dark:text-slate-500">
+                    <p className={`text-xs font-medium ${THEME.textMuted}`}>
                       Email Address
                     </p>
 
-                    <p className="mt-1 truncate text-sm font-semibold text-slate-800 dark:text-slate-200">
+                    <p className={`mt-1 truncate text-sm font-semibold ${THEME.textPrimary}`}>
                       {user?.email || "Not available"}
                     </p>
                   </div>
                 </div>
 
                 {/* Change Password */}
-                <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800">
+                <div className={`rounded-2xl p-4 ${THEME.elevated}`}>
                   <div className="flex items-center gap-4">
                     <div
                       className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
@@ -743,27 +762,27 @@ export default function Account() {
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-medium text-slate-400 dark:text-slate-500">
+                      <p className={`text-xs font-medium ${THEME.textMuted}`}>
                         Password
                       </p>
 
                       {!changingPassword ? (
                         <div className="mt-1 flex items-center justify-between gap-2">
-                          <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-200">
+                          <p className={`truncate text-sm font-semibold ${THEME.textPrimary}`}>
                             ••••••••••••
                           </p>
 
                           <button
                             type="button"
                             onClick={handleChangePasswordStart}
-                            className="flex h-8 shrink-0 items-center justify-center rounded-lg px-2.5 text-xs font-bold transition hover:bg-slate-200 active:scale-95 dark:hover:bg-slate-700"
+                            className={`flex h-8 shrink-0 items-center justify-center rounded-lg px-2.5 text-xs font-bold transition active:scale-95 ${THEME.hoverElevated}`}
                             style={{ color: "var(--accent-primary)" }}
                           >
                             Change
                           </button>
                         </div>
                       ) : (
-                        <p className="mt-1 text-sm font-semibold text-slate-500 dark:text-slate-400">
+                        <p className={`mt-1 text-sm font-semibold ${THEME.textMuted}`}>
                           Update your account password
                         </p>
                       )}
@@ -776,13 +795,13 @@ export default function Account() {
                       <div>
                         <label
                           htmlFor="current_password"
-                          className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400"
+                          className={`mb-1.5 block text-[11px] font-bold uppercase tracking-wider ${THEME.textMuted}`}
                         >
                           Current password
                         </label>
 
                         <div className="relative">
-                          <div className="pointer-events-none absolute left-3.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 dark:text-slate-500">
+                          <div className={`pointer-events-none absolute left-3.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg ${THEME.textMuted}`}>
                             <Lock size={15} />
                           </div>
 
@@ -799,14 +818,14 @@ export default function Account() {
                             disabled={savingPassword}
                             autoComplete="current-password"
                             placeholder="Enter current password"
-                            className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-11 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-transparent focus:shadow-[0_0_0_3px_var(--accent-soft)] disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
+                            className={`h-11 w-full rounded-xl border pl-11 pr-11 text-sm font-medium outline-none transition placeholder:text-[var(--text-muted)] focus:border-transparent focus:shadow-[0_0_0_3px_var(--accent-soft)] disabled:opacity-60 ${THEME.border} ${THEME.panel} ${THEME.textPrimary}`}
                           />
 
                           <button
                             type="button"
                             onClick={() => setShowCurrent((s) => !s)}
                             tabIndex={-1}
-                            className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:text-slate-500 dark:hover:bg-slate-700 dark:hover:text-slate-300"
+                            className={`absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg transition ${THEME.textMuted} ${THEME.hoverElevated}`}
                             aria-label={showCurrent ? "Hide password" : "Show password"}
                           >
                             {showCurrent ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -818,13 +837,13 @@ export default function Account() {
                       <div>
                         <label
                           htmlFor="new_password"
-                          className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400"
+                          className={`mb-1.5 block text-[11px] font-bold uppercase tracking-wider ${THEME.textMuted}`}
                         >
                           New password
                         </label>
 
                         <div className="relative">
-                          <div className="pointer-events-none absolute left-3.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 dark:text-slate-500">
+                          <div className={`pointer-events-none absolute left-3.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg ${THEME.textMuted}`}>
                             <Key size={15} />
                           </div>
 
@@ -840,21 +859,21 @@ export default function Account() {
                             disabled={savingPassword}
                             autoComplete="new-password"
                             placeholder="Enter new password"
-                            className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-11 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-transparent focus:shadow-[0_0_0_3px_var(--accent-soft)] disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
+                            className={`h-11 w-full rounded-xl border pl-11 pr-11 text-sm font-medium outline-none transition placeholder:text-[var(--text-muted)] focus:border-transparent focus:shadow-[0_0_0_3px_var(--accent-soft)] disabled:opacity-60 ${THEME.border} ${THEME.panel} ${THEME.textPrimary}`}
                           />
 
                           <button
                             type="button"
                             onClick={() => setShowNew((s) => !s)}
                             tabIndex={-1}
-                            className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:text-slate-500 dark:hover:bg-slate-700 dark:hover:text-slate-300"
+                            className={`absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg transition ${THEME.textMuted} ${THEME.hoverElevated}`}
                             aria-label={showNew ? "Hide password" : "Show password"}
                           >
                             {showNew ? <EyeOff size={15} /> : <Eye size={15} />}
                           </button>
                         </div>
 
-                        <p className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">
+                        <p className={`mt-1 text-[11px] ${THEME.textMuted}`}>
                           Minimum 6 characters
                         </p>
                       </div>
@@ -863,13 +882,13 @@ export default function Account() {
                       <div>
                         <label
                           htmlFor="confirm_password"
-                          className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400"
+                          className={`mb-1.5 block text-[11px] font-bold uppercase tracking-wider ${THEME.textMuted}`}
                         >
                           Confirm new password
                         </label>
 
                         <div className="relative">
-                          <div className="pointer-events-none absolute left-3.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 dark:text-slate-500">
+                          <div className={`pointer-events-none absolute left-3.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg ${THEME.textMuted}`}>
                             <Key size={15} />
                           </div>
 
@@ -885,14 +904,14 @@ export default function Account() {
                             disabled={savingPassword}
                             autoComplete="new-password"
                             placeholder="Re-enter new password"
-                            className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-11 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-transparent focus:shadow-[0_0_0_3px_var(--accent-soft)] disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
+                            className={`h-11 w-full rounded-xl border pl-11 pr-11 text-sm font-medium outline-none transition placeholder:text-[var(--text-muted)] focus:border-transparent focus:shadow-[0_0_0_3px_var(--accent-soft)] disabled:opacity-60 ${THEME.border} ${THEME.panel} ${THEME.textPrimary}`}
                           />
 
                           <button
                             type="button"
                             onClick={() => setShowConfirm((s) => !s)}
                             tabIndex={-1}
-                            className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:text-slate-500 dark:hover:bg-slate-700 dark:hover:text-slate-300"
+                            className={`absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg transition ${THEME.textMuted} ${THEME.hoverElevated}`}
                             aria-label={showConfirm ? "Hide password" : "Show password"}
                           >
                             {showConfirm ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -906,7 +925,7 @@ export default function Account() {
                           type="button"
                           onClick={handleChangePasswordCancel}
                           disabled={savingPassword}
-                          className="flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 transition hover:bg-slate-50 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 sm:w-auto"
+                          className={`flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border px-3 text-xs font-bold transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto ${THEME.border} ${THEME.panel} ${THEME.textPrimary} ${THEME.hoverElevated}`}
                         >
                           <X size={15} strokeWidth={2.5} />
                           Cancel
@@ -941,6 +960,7 @@ export default function Account() {
               </div>
             </section>
 
+            {/* ---------------------- Appearance ---------------------- */}
             <section>
               <div className="mb-4 flex items-center gap-2">
                 <Sun
@@ -948,7 +968,7 @@ export default function Account() {
                   style={{ color: "var(--accent-primary)" }}
                 />
 
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                <h3 className={`text-lg font-semibold ${THEME.textPrimary}`}>
                   Appearance
                 </h3>
               </div>
@@ -956,9 +976,7 @@ export default function Account() {
               <div className="grid gap-3 sm:grid-cols-2">
                 {appearanceOptions.map((option) => {
                   const Icon = option.icon;
-
-                  const selected =
-                    settings.appearance === option.id;
+                  const selected = settings.appearance === option.id;
 
                   return (
                     <button
@@ -967,15 +985,13 @@ export default function Account() {
                       onClick={() => setAppearance(option.id)}
                       className={`relative flex items-center gap-4 rounded-2xl border p-4 text-left transition ${
                         selected
-                          ? "border-[var(--accent-primary)] bg-slate-50 dark:bg-slate-800"
-                          : "border-slate-200 bg-white hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
-                      }`}
+                          ? "border-[var(--accent-primary)]"
+                          : `${THEME.border} ${THEME.hoverElevated}`
+                      } ${selected ? THEME.elevated : THEME.panel}`}
                     >
                       <div
                         className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
-                          selected
-                            ? ""
-                            : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                          selected ? "" : `${THEME.elevated} ${THEME.textMuted}`
                         }`}
                         style={
                           selected
@@ -990,11 +1006,11 @@ export default function Account() {
                       </div>
 
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                        <p className={`text-sm font-semibold ${THEME.textPrimary}`}>
                           {option.name}
                         </p>
 
-                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                        <p className={`mt-1 text-xs ${THEME.textMuted}`}>
                           {option.description}
                         </p>
                       </div>
@@ -1011,6 +1027,7 @@ export default function Account() {
               </div>
             </section>
 
+            {/* ---------------------- Accent Color ---------------------- */}
             <section>
               <div className="mb-4 flex items-center gap-2">
                 <Palette
@@ -1018,16 +1035,14 @@ export default function Account() {
                   style={{ color: "var(--accent-primary)" }}
                 />
 
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                <h3 className={`text-lg font-semibold ${THEME.textPrimary}`}>
                   Accent Color
                 </h3>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+              <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
                 {accentOptions.map((option) => {
-                  const selected =
-                    settings.accentColor === option.id;
-
+                  const selected = settings.accentColor === option.id;
                   const accent = accentColors[option.id];
 
                   return (
@@ -1035,11 +1050,11 @@ export default function Account() {
                       key={option.id}
                       type="button"
                       onClick={() => setAccentColor(option.id)}
-                      className={`flex items-center gap-3 rounded-2xl border p-3 transition sm:flex-col sm:justify-center ${
+                      className={`flex flex-col items-center gap-2 rounded-2xl border p-3 transition ${
                         selected
-                          ? "border-slate-400 bg-slate-50 dark:border-slate-500 dark:bg-slate-800"
-                          : "border-slate-200 bg-white hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
-                      }`}
+                          ? "border-[var(--accent-primary)]"
+                          : `${THEME.border} ${THEME.hoverElevated}`
+                      } ${selected ? THEME.elevated : THEME.panel}`}
                     >
                       <div
                         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
@@ -1053,7 +1068,7 @@ export default function Account() {
                         )}
                       </div>
 
-                      <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                      <span className={`text-xs font-semibold ${THEME.textPrimary}`}>
                         {option.name}
                       </span>
                     </button>

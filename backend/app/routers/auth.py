@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
-
 from app.core.database import get_db
 from app.models.user import User
 from app.schemas.user_schema import UserCreate, UserLogin, UserResponse
@@ -10,15 +9,12 @@ from app.core.security import create_access_token, get_current_user
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
-
 class UserUpdate(BaseModel):
     full_name: str = Field(min_length=1, max_length=120)
-
 
 class PasswordUpdate(BaseModel):
     current_password: str = Field(min_length=1, max_length=200)
     new_password: str = Field(min_length=6, max_length=200)
-
 
 @router.post("/register", response_model=UserResponse)
 def register(user_data: UserCreate, db: Session = Depends(get_db)):
@@ -41,7 +37,6 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
     db.refresh(user)
 
     return user
-
 
 @router.post("/login")
 def login(user_data: UserLogin, db: Session = Depends(get_db)):
@@ -73,7 +68,6 @@ def login(user_data: UserLogin, db: Session = Depends(get_db)):
         }
     }
 
-
 @router.get("/me", response_model=UserResponse)
 def get_me(
     db: Session = Depends(get_db),
@@ -92,7 +86,6 @@ def get_me(
         )
 
     return user
-
 
 @router.put("/me", response_model=UserResponse)
 def update_me(
@@ -126,7 +119,6 @@ def update_me(
     db.refresh(user)
 
     return user
-
 
 @router.put("/password")
 def update_password(

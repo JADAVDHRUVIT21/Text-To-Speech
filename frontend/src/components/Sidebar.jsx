@@ -23,6 +23,7 @@ const SIDEBAR_COLLAPSED_KEY = "tts_sidebar_collapsed_v1";
 const PINNED_CHATS_KEY = "tts_pinned_chats_v1";
 const MAX_PINNED_CHATS = 5;
 const PINNED_CHATS_STORAGE_V2 = "tts_pinned_chats_v2";
+const PINNED_OPEN_KEY = "tts_pinned_open_v1";
 
 function getPinUserKey(user) {
   if (!user) return null;
@@ -106,6 +107,34 @@ function getLanguageName(language) {
   return names[code] || names[code.split("-")[0]] || (language || "Language");
 }
 
+/* ------------------------------------------------------------------ */
+/*  Theme-aware utility classes                                        */
+/* ------------------------------------------------------------------ */
+
+const THEME = {
+  sidebar: "bg-[var(--bg-surface)] border-[var(--border-soft)]",
+  panel: "bg-[var(--bg-surface)] border-[var(--border-soft)]",
+  elevated: "bg-[var(--bg-elevated)]",
+  textPrimary: "text-[var(--text-primary)]",
+  textMuted: "text-[var(--text-muted)]",
+  hoverSoft:
+    "hover:bg-[var(--bg-elevated)] active:bg-[var(--bg-elevated)]",
+};
+
+/* ------------------------------------------------------------------ */
+/*  Accent-aware style helper (supports Rainbow gradient)              */
+/* ------------------------------------------------------------------ */
+
+function accentBg() {
+  return {
+    background: "var(--accent-gradient, var(--accent-primary))",
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/*  Confirm alert                                                      */
+/* ------------------------------------------------------------------ */
+
 function IOSConfirmAlert({
   open,
   title,
@@ -121,26 +150,30 @@ function IOSConfirmAlert({
 
   return (
     <div className="fixed inset-0 z-[200] flex items-end justify-center bg-black/30 p-3 backdrop-blur-[2px] sm:items-center sm:p-5">
-      <div className="w-full max-w-[390px] overflow-hidden rounded-[28px] border border-white/70 bg-white/95 shadow-2xl backdrop-blur-xl dark:border-slate-700 dark:bg-slate-900/95">
+      <div
+        className={`w-full max-w-[390px] overflow-hidden rounded-[28px] border shadow-2xl backdrop-blur-xl ${THEME.panel}`}
+      >
         <div className="px-6 pb-5 pt-6 text-center">
-          <h3 className="text-[17px] font-bold tracking-tight text-slate-900 dark:text-white">
+          <h3
+            className={`text-[17px] font-bold tracking-tight ${THEME.textPrimary}`}
+          >
             {title}
           </h3>
 
-          <p className="mt-2 text-sm leading-5 text-slate-500 dark:text-slate-400">
+          <p className={`mt-2 text-sm leading-5 ${THEME.textMuted}`}>
             {message}
           </p>
         </div>
 
-        <div className="border-t border-slate-200/80 dark:border-slate-800">
+        <div className="border-t border-[var(--border-soft)]">
           <button
             type="button"
             disabled={loading}
             onClick={onConfirm}
-            className={`flex min-h-12 w-full items-center justify-center border-b border-slate-200/80 text-[16px] font-bold transition active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-800 ${
+            className={`flex min-h-12 w-full items-center justify-center border-b border-[var(--border-soft)] text-[16px] font-bold transition active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 ${
               danger
                 ? "bg-red-600 text-white hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-500"
-                : "text-[var(--accent-primary)] active:bg-slate-100 dark:active:bg-slate-800"
+                : "text-[var(--accent-primary)] active:bg-[var(--bg-elevated)]"
             }`}
           >
             {loading ? "Deleting..." : confirmText}
@@ -150,7 +183,7 @@ function IOSConfirmAlert({
             type="button"
             disabled={loading}
             onClick={onCancel}
-            className="flex min-h-12 w-full items-center justify-center text-[16px] font-semibold text-[var(--accent-primary)] transition active:bg-slate-100 disabled:opacity-50 dark:active:bg-slate-800"
+            className="flex min-h-12 w-full items-center justify-center text-[16px] font-semibold text-[var(--accent-primary)] transition active:bg-[var(--bg-elevated)] disabled:opacity-50"
           >
             {cancelText}
           </button>
@@ -160,13 +193,11 @@ function IOSConfirmAlert({
   );
 }
 
-function IOSRenameAlert({
-  open,
-  value,
-  onChange,
-  onCancel,
-  onConfirm,
-}) {
+/* ------------------------------------------------------------------ */
+/*  Rename alert                                                       */
+/* ------------------------------------------------------------------ */
+
+function IOSRenameAlert({ open, value, onChange, onCancel, onConfirm }) {
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -184,14 +215,18 @@ function IOSRenameAlert({
 
   return (
     <div className="fixed inset-0 z-[200] flex items-end justify-center bg-black/30 p-3 backdrop-blur-[2px] sm:items-center sm:p-5">
-      <div className="w-full max-w-[390px] overflow-hidden rounded-[28px] border border-white/70 bg-white/95 shadow-2xl backdrop-blur-xl dark:border-slate-700 dark:bg-slate-900/95">
+      <div
+        className={`w-full max-w-[390px] overflow-hidden rounded-[28px] border shadow-2xl backdrop-blur-xl ${THEME.panel}`}
+      >
         <div className="px-6 pb-5 pt-6">
           <div className="text-center">
-            <h3 className="text-[17px] font-bold tracking-tight text-slate-900 dark:text-white">
+            <h3
+              className={`text-[17px] font-bold tracking-tight ${THEME.textPrimary}`}
+            >
               Rename chat
             </h3>
 
-            <p className="mt-2 text-sm leading-5 text-slate-500 dark:text-slate-400">
+            <p className={`mt-2 text-sm leading-5 ${THEME.textMuted}`}>
               Enter a new name for this chat.
             </p>
           </div>
@@ -212,16 +247,16 @@ function IOSRenameAlert({
               }
             }}
             maxLength={80}
-            className="mt-5 h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-[var(--accent-primary)] focus:bg-white focus:ring-4 focus:ring-[var(--accent-primary)]/10 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:bg-slate-800"
+            className={`mt-5 h-12 w-full rounded-2xl border border-[var(--border-soft)] bg-[var(--bg-elevated)] px-4 text-sm font-medium outline-none transition focus:border-[var(--accent-primary)] focus:ring-4 focus:ring-[var(--accent-primary)]/10 ${THEME.textPrimary}`}
             placeholder="Chat name"
           />
         </div>
 
-        <div className="border-t border-slate-200/80 dark:border-slate-800">
+        <div className="border-t border-[var(--border-soft)]">
           <button
             type="button"
             onClick={onConfirm}
-            className="flex min-h-12 w-full items-center justify-center border-b border-slate-200/80 text-[16px] font-semibold text-[var(--accent-primary)] transition active:bg-slate-100 dark:border-slate-800 dark:active:bg-slate-800"
+            className="flex min-h-12 w-full items-center justify-center border-b border-[var(--border-soft)] text-[16px] font-semibold text-[var(--accent-primary)] transition active:bg-[var(--bg-elevated)]"
           >
             Rename
           </button>
@@ -229,7 +264,7 @@ function IOSRenameAlert({
           <button
             type="button"
             onClick={onCancel}
-            className="flex min-h-12 w-full items-center justify-center text-[16px] font-semibold text-[var(--accent-primary)] transition active:bg-slate-100 dark:active:bg-slate-800"
+            className="flex min-h-12 w-full items-center justify-center text-[16px] font-semibold text-[var(--accent-primary)] transition active:bg-[var(--bg-elevated)]"
           >
             Cancel
           </button>
@@ -238,6 +273,10 @@ function IOSRenameAlert({
     </div>
   );
 }
+
+/* ------------------------------------------------------------------ */
+/*  Chat options menu                                                  */
+/* ------------------------------------------------------------------ */
 
 function ChatOptionsMenu({ position, pinned, onPin, onRename, onDelete }) {
   if (!position) return null;
@@ -263,7 +302,7 @@ function ChatOptionsMenu({ position, pinned, onPin, onRename, onDelete }) {
   return createPortal(
     <div
       data-chat-options-menu="true"
-      className="fixed z-[150] w-44 overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-2xl shadow-slate-900/15 dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/40"
+      className={`fixed z-[150] w-44 overflow-hidden rounded-2xl border p-1.5 shadow-2xl shadow-slate-900/15 dark:shadow-black/40 ${THEME.panel}`}
       style={{ left, top }}
       onMouseDown={(event) => event.stopPropagation()}
       onClick={(event) => event.stopPropagation()}
@@ -271,12 +310,16 @@ function ChatOptionsMenu({ position, pinned, onPin, onRename, onDelete }) {
       <button
         type="button"
         onClick={onPin}
-        className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-100 active:bg-slate-200 dark:text-slate-200 dark:hover:bg-slate-800 dark:active:bg-slate-700"
+        className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition ${THEME.textPrimary} ${THEME.hoverSoft}`}
       >
         <Pin
           size={17}
           strokeWidth={2}
-          className={`shrink-0 ${pinned ? "fill-current text-[var(--accent-primary)]" : "text-slate-600 dark:text-slate-400"}`}
+          className={`shrink-0 ${
+            pinned
+              ? "fill-current text-[var(--accent-primary)]"
+              : "text-[var(--text-muted)]"
+          }`}
         />
         <span>{pinned ? "Unpin" : "Pin"}</span>
       </button>
@@ -284,9 +327,13 @@ function ChatOptionsMenu({ position, pinned, onPin, onRename, onDelete }) {
       <button
         type="button"
         onClick={onRename}
-        className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-100 active:bg-slate-200 dark:text-slate-200 dark:hover:bg-slate-800 dark:active:bg-slate-700"
+        className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition ${THEME.textPrimary} ${THEME.hoverSoft}`}
       >
-        <Pencil size={17} strokeWidth={2} className="shrink-0 text-slate-600 dark:text-slate-400" />
+        <Pencil
+          size={17}
+          strokeWidth={2}
+          className="shrink-0 text-[var(--text-muted)]"
+        />
         <span>Rename</span>
       </button>
 
@@ -302,6 +349,10 @@ function ChatOptionsMenu({ position, pinned, onPin, onRename, onDelete }) {
     document.body
   );
 }
+
+/* ------------------------------------------------------------------ */
+/*  Sidebar toggle button                                              */
+/* ------------------------------------------------------------------ */
 
 function SidebarToggleButton({ collapsed, onClick }) {
   const [hover, setHover] = useState(false);
@@ -332,8 +383,8 @@ function SidebarToggleButton({ collapsed, onClick }) {
           aria-label={collapsed ? "Open sidebar" : "Close sidebar"}
           className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
             hover
-              ? "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-200"
-              : "text-slate-500 dark:text-slate-400"
+              ? "bg-[var(--bg-elevated)] text-[var(--text-primary)]"
+              : "text-[var(--text-muted)]"
           }`}
         >
           <PanelLeft size={18} />
@@ -361,6 +412,10 @@ function SidebarToggleButton({ collapsed, onClick }) {
   );
 }
 
+/* ------------------------------------------------------------------ */
+/*  Sidebar                                                            */
+/* ------------------------------------------------------------------ */
+
 export default function Sidebar({
   history = [],
   user = null,
@@ -387,9 +442,21 @@ export default function Sidebar({
   const [deleteChat, setDeleteChat] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+  const [unpinChat, setUnpinChat] = useState(null);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [pinnedIds, setPinnedIds] = useState(() => readPinnedChats(user));
-  const [pinnedOpen, setPinnedOpen] = useState(true);
+
+  const [pinnedOpen, setPinnedOpen] = useState(() => {
+    try {
+      const saved = localStorage.getItem(PINNED_OPEN_KEY);
+      if (saved === null) return true;
+      return saved === "1";
+    } catch {
+      return true;
+    }
+  });
+
   const [pinLimitMessage, setPinLimitMessage] = useState("");
   const [autoHistoryLoading, setAutoHistoryLoading] = useState(
     historyLoading === null && safeHistory.length === 0
@@ -402,6 +469,14 @@ export default function Sidebar({
       return false;
     }
   });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(PINNED_OPEN_KEY, pinnedOpen ? "1" : "0");
+    } catch {
+      /* ignore */
+    }
+  }, [pinnedOpen]);
 
   useEffect(() => {
     if (!user) return;
@@ -546,7 +621,7 @@ export default function Sidebar({
     setMenuPosition(null);
 
     if (pinnedIds.includes(id)) {
-      setPinnedIds((current) => current.filter((value) => value !== id));
+      setUnpinChat(item);
       return;
     }
 
@@ -557,6 +632,14 @@ export default function Sidebar({
 
     setPinnedIds((current) => [...current, id].slice(0, MAX_PINNED_CHATS));
     setPinnedOpen(true);
+  };
+
+  const handleUnpinConfirm = () => {
+    if (!unpinChat) return;
+
+    const id = String(unpinChat.id);
+    setPinnedIds((current) => current.filter((value) => value !== id));
+    setUnpinChat(null);
   };
 
   const handleMenuToggle = (event, item) => {
@@ -662,7 +745,8 @@ export default function Sidebar({
     onMobileClose?.();
   };
 
-  const handleAccountClick = () => {
+  /* Navigate to /account — used by the account menu dropdown */
+  const handleAccountNavigate = () => {
     setMenuId(null);
     setMenuPosition(null);
     onMobileClose?.();
@@ -736,6 +820,10 @@ export default function Sidebar({
     };
   }, [menuId]);
 
+  /* ---------------------------------------------------------------- */
+  /*  Chat row                                                        */
+  /* ---------------------------------------------------------------- */
+
   const renderChat = (item) => {
     const itemIsPinned = isPinned(item.id);
     const isActive = String(activeChatId) === String(item.id);
@@ -751,8 +839,8 @@ export default function Sidebar({
             collapsed ? "justify-center px-2 py-2.5" : "px-3 py-2.5 pr-11"
           } text-left transition ${
             isActive
-              ? "bg-white shadow-sm ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700"
-              : "hover:bg-slate-200/70 dark:hover:bg-slate-800/70"
+              ? "bg-[var(--bg-elevated)] ring-1 ring-[var(--border-soft)]"
+              : "hover:bg-[var(--bg-elevated)]"
           }`}
         >
           <div
@@ -769,7 +857,11 @@ export default function Sidebar({
             <MessageCircle
               size={18}
               strokeWidth={1.9}
-              className={isActive ? "text-[var(--accent-primary)]" : "text-slate-500 dark:text-slate-400"}
+              style={
+                isActive
+                  ? { color: "var(--accent-primary)" }
+                  : { color: "var(--text-muted)" }
+              }
             />
           </div>
 
@@ -777,11 +869,7 @@ export default function Sidebar({
             <div className="min-w-0 flex-1">
               <div className="flex min-w-0 items-center gap-1.5">
                 <p
-                  className={`min-w-0 truncate text-[13px] font-medium ${
-                    isActive
-                      ? "text-slate-900 dark:text-white"
-                      : "text-slate-700 dark:text-slate-200"
-                  }`}
+                  className={`min-w-0 truncate text-[13px] font-medium ${THEME.textPrimary}`}
                 >
                   {title}
                 </p>
@@ -790,12 +878,12 @@ export default function Sidebar({
                   <Pin
                     size={12}
                     strokeWidth={2.2}
-                    className="shrink-0 fill-current text-slate-400 dark:text-slate-500"
+                    className="shrink-0 fill-current text-[var(--text-muted)]"
                   />
                 )}
               </div>
 
-              <p className="mt-0.5 truncate text-[10px] text-slate-400 dark:text-slate-500">
+              <p className={`mt-0.5 truncate text-[10px] ${THEME.textMuted}`}>
                 {getLanguageName(item.language)}
                 {item.voice ? ` · ${item.voice}` : ""}
               </p>
@@ -809,10 +897,8 @@ export default function Sidebar({
             aria-label="Chat options"
             data-chat-options-button="true"
             onClick={(event) => handleMenuToggle(event, item)}
-            className={`absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-slate-700 dark:hover:text-slate-200 ${
-              menuId === item.id
-                ? "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200"
-                : ""
+            className={`absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-[var(--text-muted)] transition hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] ${
+              menuId === item.id ? "bg-[var(--bg-elevated)] text-[var(--text-primary)]" : ""
             }`}
           >
             <Ellipsis size={18} />
@@ -822,6 +908,10 @@ export default function Sidebar({
     );
   };
 
+  /* ---------------------------------------------------------------- */
+  /*  Render                                                          */
+  /* ---------------------------------------------------------------- */
+
   return (
     <>
       {mobileOpen && (
@@ -829,19 +919,19 @@ export default function Sidebar({
           type="button"
           aria-label="Close sidebar"
           onClick={onMobileClose}
-          className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[1px] lg:hidden"
+          className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[1px] transition-opacity duration-300 ease-out lg:hidden"
         />
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex flex-col border-r border-slate-200 bg-[#f7f7f8] transition-[width] duration-300 ease-out dark:border-slate-800 dark:bg-slate-900 lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col border-r transition-[width,transform] duration-300 ease-out will-change-transform lg:translate-x-0 ${THEME.sidebar} ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
         style={{ width: collapsed ? 72 : 285 }}
       >
         <div className="flex h-full flex-col">
           <div
-            className={`flex h-[72px] shrink-0 items-center border-b border-slate-200/80 dark:border-slate-800 ${
+            className={`flex h-[72px] shrink-0 items-center border-b border-[var(--border-soft)] ${
               collapsed ? "justify-center px-2" : "justify-between px-3"
             }`}
           >
@@ -852,17 +942,17 @@ export default function Sidebar({
             >
               <div
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white"
-                style={{ backgroundColor: "var(--accent-primary)" }}
+                style={accentBg()}
               >
                 <MessageCircle size={18} />
               </div>
 
               {!collapsed && (
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-bold text-slate-900 dark:text-white">
+                  <p className={`truncate text-sm font-bold ${THEME.textPrimary}`}>
                     Text-to-Speech
                   </p>
-                  <p className="truncate text-[11px] text-slate-400 dark:text-slate-500">
+                  <p className={`truncate text-[11px] ${THEME.textMuted}`}>
                     Your speech history
                   </p>
                 </div>
@@ -881,7 +971,7 @@ export default function Sidebar({
             <button
               type="button"
               onClick={onMobileClose}
-              className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-800 lg:hidden"
+              className={`flex h-9 w-9 items-center justify-center rounded-xl text-[var(--text-muted)] transition hover:bg-[var(--bg-elevated)] lg:hidden`}
             >
               <X size={18} />
             </button>
@@ -890,7 +980,7 @@ export default function Sidebar({
           {!collapsed && (
             <div className="px-3 pt-3">
               <div className="relative">
-                <div className="pointer-events-none absolute left-3 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 dark:text-slate-500">
+                <div className="pointer-events-none absolute left-3 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-[var(--text-muted)]">
                   <Search size={15} />
                 </div>
 
@@ -899,14 +989,14 @@ export default function Sidebar({
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
                   placeholder="Search chats…"
-                  className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-8 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-transparent focus:shadow-[0_0_0_3px_var(--accent-soft)] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+                  className={`h-10 w-full rounded-xl border border-[var(--border-soft)] bg-[var(--bg-elevated)] pl-10 pr-8 text-sm font-medium outline-none transition placeholder:text-[var(--text-muted)] focus:border-transparent focus:shadow-[0_0_0_3px_var(--accent-soft)] ${THEME.textPrimary}`}
                 />
 
                 {searchQuery && (
                   <button
                     type="button"
                     onClick={() => setSearchQuery("")}
-                    className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-700"
+                    className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-[var(--text-muted)] transition hover:bg-[var(--bg-surface)]"
                     aria-label="Clear search"
                   >
                     <X size={13} />
@@ -935,16 +1025,13 @@ export default function Sidebar({
                 onMobileClose?.();
               }}
               title="New Chat"
-              className={`flex min-h-11 w-full items-center gap-3 rounded-xl border border-slate-200 bg-white ${
+              className={`flex min-h-11 w-full items-center gap-3 rounded-xl border border-[var(--border-soft)] bg-[var(--bg-surface)] ${
                 collapsed ? "justify-center px-2" : "px-3.5"
-              } text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 active:scale-[0.99] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:border-slate-600 dark:hover:bg-slate-700`}
+              } text-sm font-semibold shadow-sm transition hover:bg-[var(--bg-elevated)] active:scale-[0.99] ${THEME.textPrimary}`}
             >
               <div
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
-                style={{
-                  backgroundColor: "var(--accent-light)",
-                  color: "var(--accent-primary)",
-                }}
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-white"
+                style={accentBg()}
               >
                 <Plus size={17} />
               </div>
@@ -955,7 +1042,7 @@ export default function Sidebar({
 
           {!collapsed && (
             <div className="px-4 pb-2 pt-5">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              <p className={`text-[11px] font-bold uppercase tracking-wider ${THEME.textMuted}`}>
                 {searchQuery ? "Search results" : "Chats"}
               </p>
             </div>
@@ -965,11 +1052,11 @@ export default function Sidebar({
             {chatsAreLoading ? (
               <div className="flex h-full min-h-[220px] flex-col items-center justify-center px-4 text-center">
                 <div
-                  className="h-9 w-9 animate-spin rounded-full border-[3px] border-slate-200 border-t-[var(--accent-primary)] dark:border-slate-700 dark:border-t-[var(--accent-primary)]"
+                  className="h-9 w-9 animate-spin rounded-full border-[3px] border-[var(--border-soft)] border-t-[var(--accent-primary)]"
                   aria-hidden="true"
                 />
                 {!collapsed && (
-                  <p className="mt-4 text-sm font-medium text-slate-500 dark:text-slate-400">
+                  <p className={`mt-4 text-sm font-medium ${THEME.textMuted}`}>
                     Loading your chats...
                   </p>
                 )}
@@ -984,11 +1071,11 @@ export default function Sidebar({
                       className="flex w-full items-center gap-1 px-2 py-1.5 text-left"
                     >
                       {pinnedOpen ? (
-                        <ChevronDown size={15} className="text-slate-400" />
+                        <ChevronDown size={15} className="text-[var(--text-muted)]" />
                       ) : (
-                        <ChevronRight size={15} className="text-slate-400" />
+                        <ChevronRight size={15} className="text-[var(--text-muted)]" />
                       )}
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                      <span className={`text-[11px] font-bold uppercase tracking-wider ${THEME.textMuted}`}>
                         Pinned
                       </span>
                     </button>
@@ -998,7 +1085,7 @@ export default function Sidebar({
                         {pinnedHistory.length > 0 ? (
                           pinnedHistory.map(renderChat)
                         ) : (
-                          <p className="px-7 py-2 text-[11px] text-slate-400 dark:text-slate-500">
+                          <p className={`px-7 py-2 text-[11px] ${THEME.textMuted}`}>
                             No pinned chats match your search.
                           </p>
                         )}
@@ -1009,7 +1096,7 @@ export default function Sidebar({
 
                 {!collapsed && (
                   <div className="mb-1 px-2 py-1">
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                    <p className={`text-[11px] font-bold uppercase tracking-wider ${THEME.textMuted}`}>
                       {searchQuery ? "Results" : "Recent"}
                     </p>
                   </div>
@@ -1017,24 +1104,24 @@ export default function Sidebar({
 
                 {recentHistory.length === 0 ? (
                   <div
-                    className={`mx-1 mt-2 rounded-2xl border border-dashed border-slate-200 bg-white/70 text-center dark:border-slate-700 dark:bg-slate-800/40 ${
+                    className={`mx-1 mt-2 rounded-2xl border border-dashed border-[var(--border-soft)] bg-[var(--bg-surface)]/70 text-center ${
                       collapsed ? "px-2 py-6" : "px-4 py-8"
                     }`}
                   >
-                    <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500">
+                    <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--bg-elevated)] text-[var(--text-muted)]">
                       {searchQuery ? <Search size={18} /> : <MessageCircle size={18} />}
                     </div>
 
                     {!collapsed && (
                       <>
-                        <p className="mt-3 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                        <p className={`mt-3 text-xs font-semibold ${THEME.textMuted}`}>
                           {searchQuery
                             ? "No chats match your search"
                             : pinnedHistory.length > 0
                               ? "No recent chats"
                               : "No chats yet"}
                         </p>
-                        <p className="mt-1 text-[11px] leading-4 text-slate-400 dark:text-slate-500">
+                        <p className={`mt-1 text-[11px] leading-4 ${THEME.textMuted}`}>
                           {searchQuery
                             ? "Try a different keyword."
                             : pinnedHistory.length > 0
@@ -1055,25 +1142,25 @@ export default function Sidebar({
 
           {pinLimitMessage && !collapsed && (
             <div className="shrink-0 px-3 pb-2">
-              <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-center text-xs font-medium text-slate-600 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+              <div className={`rounded-xl border border-[var(--border-soft)] bg-[var(--bg-surface)] px-3 py-2 text-center text-xs font-medium shadow-sm ${THEME.textPrimary}`}>
                 {pinLimitMessage}
               </div>
             </div>
           )}
 
-          <div className="shrink-0 border-t border-slate-200/80 p-3 dark:border-slate-800">
-            <div className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/70 dark:bg-slate-800 dark:ring-slate-700">
+          <div className="shrink-0 border-t border-[var(--border-soft)] p-3">
+            <div className="rounded-2xl bg-[var(--bg-surface)] shadow-sm ring-1 ring-[var(--border-soft)]">
               <div
                 className={`flex items-center ${
                   collapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-3"
                 }`}
               >
-                <button
-                  type="button"
-                  onClick={handleAccountClick}
-                  title={collapsed ? user?.full_name || "Account" : "Open account"}
-                  className="flex min-w-0 flex-1 items-center gap-3 rounded-2xl text-left transition hover:bg-slate-50 dark:hover:bg-slate-700"
-                >
+                {/*
+                  Account row:
+                  - The avatar + name + email are NO LONGER clickable
+                  - Only the ellipsis (⋯) icon opens the account menu
+                */}
+                <div className="flex min-w-0 flex-1 items-center gap-3">
                   <div
                     className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
                     style={{
@@ -1086,15 +1173,15 @@ export default function Sidebar({
 
                   {!collapsed && (
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-bold text-slate-800 dark:text-slate-100">
+                      <p className={`truncate text-xs font-bold ${THEME.textPrimary}`}>
                         {user?.full_name || "User"}
                       </p>
-                      <p className="truncate text-[10px] text-slate-400 dark:text-slate-500">
+                      <p className={`truncate text-[10px] ${THEME.textMuted}`}>
                         {user?.email || ""}
                       </p>
                     </div>
                   )}
-                </button>
+                </div>
 
                 {!collapsed && (
                   <button
@@ -1102,10 +1189,8 @@ export default function Sidebar({
                     aria-label="Account options"
                     data-account-options-button="true"
                     onClick={handleAccountMenuToggle}
-                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-slate-700 dark:hover:text-slate-200 ${
-                      menuId === "account"
-                        ? "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200"
-                        : ""
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--text-muted)] transition hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] ${
+                      menuId === "account" ? "bg-[var(--bg-elevated)] text-[var(--text-primary)]" : ""
                     }`}
                   >
                     <Ellipsis size={18} />
@@ -1140,7 +1225,7 @@ export default function Sidebar({
         createPortal(
           <div
             data-chat-options-menu="true"
-            className="fixed z-[150] w-44 overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-2xl shadow-slate-900/15 dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/40"
+            className={`fixed z-[150] w-44 overflow-hidden rounded-2xl border p-1.5 shadow-2xl shadow-slate-900/15 dark:shadow-black/40 ${THEME.panel}`}
             style={{ left: menuPosition.left, top: menuPosition.top }}
             onMouseDown={(event) => event.stopPropagation()}
             onClick={(event) => event.stopPropagation()}
@@ -1150,11 +1235,11 @@ export default function Sidebar({
               onClick={() => {
                 setMenuId(null);
                 setMenuPosition(null);
-                handleAccountClick();
+                handleAccountNavigate();
               }}
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-100 active:bg-slate-200 dark:text-slate-200 dark:hover:bg-slate-800 dark:active:bg-slate-700"
+              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition ${THEME.textPrimary} ${THEME.hoverSoft}`}
             >
-              <Settings size={17} strokeWidth={2} className="shrink-0 text-slate-600 dark:text-slate-400" />
+              <Settings size={17} strokeWidth={2} className="shrink-0 text-[var(--text-muted)]" />
               <span>Settings</span>
             </button>
 
@@ -1196,6 +1281,17 @@ export default function Sidebar({
           if (!deleteLoading) setDeleteChat(null);
         }}
         onConfirm={handleDeleteConfirm}
+      />
+
+      <IOSConfirmAlert
+        open={Boolean(unpinChat)}
+        title="Unpin chat?"
+        message="This chat will be removed from your pinned list. You can pin it again later."
+        confirmText="Unpin"
+        cancelText="Cancel"
+        danger={false}
+        onCancel={() => setUnpinChat(null)}
+        onConfirm={handleUnpinConfirm}
       />
     </>
   );

@@ -1,7 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
-
 from app.schemas.tts_schema import (
     TTSRequest,
     TTSHistoryResponse,
@@ -16,12 +15,10 @@ from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.tts_history import TTSHistory
 
-
 router = APIRouter(
     prefix="/api",
     tags=["TTS"]
 )
-
 
 @router.post("/tts")
 def generate_tts(
@@ -105,7 +102,6 @@ def generate_tts(
             detail=str(e)
         )
 
-
 @router.get("/languages")
 def get_languages():
     return {
@@ -117,7 +113,6 @@ def get_languages():
             for code, name in SUPPORTED_LANGUAGES.items()
         ]
     }
-
 
 @router.get("/voices")
 def get_voices():
@@ -133,7 +128,6 @@ def get_voices():
             status_code=500,
             detail="Failed to fetch voices. Please try again later."
         )
-
 
 @router.get(
     "/history",
@@ -155,7 +149,6 @@ def get_history(
     )
 
     return history
-
 
 @router.post(
     "/history",
@@ -179,7 +172,6 @@ def create_history(
     db.refresh(history)
 
     return history
-
 
 @router.put(
     "/history/{history_id}",
@@ -215,7 +207,6 @@ def update_history(
 
     return history
 
-
 @router.delete("/history/{history_id}")
 def delete_history(
     history_id: int,
@@ -243,7 +234,6 @@ def delete_history(
     return {
         "message": "History item deleted successfully"
     }
-
 
 @router.delete("/history")
 def clear_history(

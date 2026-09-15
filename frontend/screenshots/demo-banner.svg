@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 200" width="800" height="200">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1">
+      <stop offset="0%" stop-color="#6366f1">
+        <animate attributeName="stop-color"
+                 values="#6366f1;#ec4899;#06b6d4;#6366f1"
+                 dur="6s" repeatCount="indefinite"/>
+      </stop>
+      <stop offset="100%" stop-color="#06b6d4">
+        <animate attributeName="stop-color"
+                 values="#06b6d4;#6366f1;#ec4899;#06b6d4"
+                 dur="6s" repeatCount="indefinite"/>
+      </stop>
+    </linearGradient>
+  </defs>
+
+  <rect width="800" height="200" fill="url(#g)" rx="16"/>
+
+  <text x="400" y="90" text-anchor="middle"
+        font-family="Arial, sans-serif" font-size="36" font-weight="bold" fill="#fff">
+    🎙️ Text-to-Speech Application
+    <animate attributeName="opacity" values="1;0.85;1" dur="2s" repeatCount="indefinite"/>
+  </text>
+
+  <text x="400" y="140" text-anchor="middle"
+        font-family="Arial, sans-serif" font-size="18" fill="#e0e7ff">
+    Enter text → Pick voice → Get natural audio
+    <animate attributeName="opacity" values="0.4;1;0.4" dur="3s" repeatCount="indefinite"/>
+  </text>
+</svg>

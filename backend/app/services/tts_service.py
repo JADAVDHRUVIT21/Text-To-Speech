@@ -7,10 +7,8 @@ def get_voices():
         }
     ]
 
-
 def get_voice_ids():
     return {"default"}
-
 
 def generate_speech(text: str, voice_id: str):
     raise RuntimeError(

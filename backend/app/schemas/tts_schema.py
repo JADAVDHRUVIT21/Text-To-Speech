@@ -1,7 +1,5 @@
 from datetime import datetime
-
 from pydantic import BaseModel, Field
-
 
 SUPPORTED_LANGUAGES = {
     "en": "English",
@@ -40,7 +38,6 @@ class TTSRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=5000)
     language: str = Field(..., min_length=2, max_length=10)
     voice: str = Field(..., min_length=1, max_length=100)
-
 
 class TTSHistoryResponse(BaseModel):
     id: int

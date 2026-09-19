@@ -792,29 +792,6 @@ curl http://127.0.0.1:8000/api/health
 
 ## 🗺️ Roadmap
 
-<div align="center">
-
-```mermaid
-timeline
-    title Feature Roadmap
-    section Q1 : Authentication
-        Social Login : OAuth providers
-    section Q2 : Platforms
-        PWA : Progressive Web App
-        Android : Native app
-        iOS : Native app
-    section Q3 : Audio
-        Voice Controls : Speed & pitch
-        Favorites : Save preferred voices
-    section Q4 : Advanced
-        Search : History filtering
-        Analytics : Usage statistics
-        Cloud : Audio storage
-        Rate Limit : Improved limits
-```
-
-</div>
-
 - [ ] 🔗 Social login & OAuth
 - [ ] 📦 Progressive Web App (PWA)
 - [ ] 🤖 Native Android app

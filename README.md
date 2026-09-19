@@ -855,7 +855,6 @@ For reuse beyond that scope, please contact the author.
 ### **Dhruvit Jadav**
 
 Full-Stack Developer 
-<br/><br/>
 
 ### ⭐ If you found this project helpful, please give it a star!
 

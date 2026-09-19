@@ -855,11 +855,6 @@ For reuse beyond that scope, please contact the author.
 ### **Dhruvit Jadav**
 
 Full-Stack Developer 
-
-<a href="https://github.com/JADAVDHRUVIT21">
-  <img src="https://img.shields.io/badge/GitHub-JADAVDHRUVIT21-181717?style=for-the-badge&logo=github&logoColor=white" />
-</a>
-
 <br/><br/>
 
 ### ⭐ If you found this project helpful, please give it a star!

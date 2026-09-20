@@ -6,36 +6,20 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import { useAuth } from "./context/AuthContext";
 import Account from "./pages/Account";
+import AppSplash from "./components/AppSplash";
 
 /*
  * ProtectedRoute — for pages that require login.
  * If not logged in → redirect to /login.
+ *
+ * While AuthContext is verifying, render nothing — the AppSplash at the
+ * top of AppRoutes is already covering the screen.
  */
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading, token, user } = useAuth();
 
-  // While we're verifying the session, show a loading screen.
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-100 dark:bg-slate-950">
-        <div className="flex flex-col items-center gap-3">
-          <div
-            className="h-10 w-10 animate-spin rounded-full border-[3px] border-slate-200"
-            style={{ borderTopColor: "var(--accent-primary)" }}
-          />
-          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-            Restoring your session…
-          </p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return null;
 
-  /*
-   * Even if isAuthenticated is technically false, if we still have a token
-   * and a cached user, we allow access — AuthContext keeps the session
-   * optimistic on network failures, so mobile cold-starts don't log out.
-   */
   const hasSession = isAuthenticated || (Boolean(token) && Boolean(user));
 
   if (!hasSession) {
@@ -48,25 +32,14 @@ function ProtectedRoute({ children }) {
 /*
  * GuestRoute — for pages only guests should see (login, register).
  * If already logged in → redirect to /dashboard.
+ *
+ * While AuthContext is verifying, render nothing — the AppSplash covers
+ * the screen anyway.
  */
 function GuestRoute({ children }) {
   const { isAuthenticated, loading, token, user } = useAuth();
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-100 dark:bg-slate-950">
-        <div className="flex flex-col items-center gap-3">
-          <div
-            className="h-10 w-10 animate-spin rounded-full border-[3px] border-slate-200"
-            style={{ borderTopColor: "var(--accent-primary)" }}
-          />
-          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-            Restoring your session…
-          </p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return null;
 
   const hasSession = isAuthenticated || (Boolean(token) && Boolean(user));
 
@@ -77,9 +50,18 @@ function GuestRoute({ children }) {
   return children;
 }
 
-function App() {
+/*
+ * AppRoutes — uses useAuth() so it must live inside AuthProvider.
+ * Renders the global splash + the routes.
+ */
+function AppRoutes() {
+  const { loading } = useAuth();
+
   return (
-    <BrowserRouter>
+    <>
+      {/* Global cold-start splash */}
+      <AppSplash ready={!loading} minimumDuration={1400} />
+
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
 
@@ -121,6 +103,14 @@ function App() {
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+    </>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppRoutes />
     </BrowserRouter>
   );
 }

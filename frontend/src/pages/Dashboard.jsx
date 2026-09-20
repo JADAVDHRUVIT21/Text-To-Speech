@@ -35,6 +35,7 @@ import {
 } from "../services/api";
 
 import Sidebar from "../components/Sidebar";
+import AIAssistant from "../components/AIAssistant";
 
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
@@ -44,6 +45,9 @@ const MAX_CHARACTERS = 2999;
 
 const PURGO_MALUM_URL =
     "https://www.purgomalum.com/service/containsprofanity";
+
+const ALLOWED_DOCUMENT_EXTENSIONS = ["pdf", "txt", "docx", "epub"];
+const MAX_DOCUMENT_SIZE = 10 * 1024 * 1024; // 10 MB
 
 /* ------------------------------------------------------------------ */
 /*  Theme-aware utility class strings                                  */
@@ -69,6 +73,14 @@ function formatTime(seconds) {
     const minutes = Math.floor(totalSeconds / 60);
     const remainingSeconds = totalSeconds % 60;
     return `${minutes}:${String(remainingSeconds).padStart(2, "0")}`;
+}
+
+function formatBytes(bytes) {
+    if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
+    const units = ["B", "KB", "MB", "GB"];
+    const i = Math.min(units.length - 1, Math.floor(Math.log(bytes) / Math.log(1024)));
+    const value = bytes / Math.pow(1024, i);
+    return `${value.toFixed(value >= 10 || i === 0 ? 0 : 1)} ${units[i]}`;
 }
 
 function getLanguageFlag(languageCode) {
@@ -227,6 +239,14 @@ function createXaiFallbackVoices(languageCode) {
         supportedEngines: [],
         fallback: true,
     }));
+}
+
+function isSupportedDocumentFile(file) {
+    if (!file) return false;
+    const extension = file.name.includes(".")
+        ? file.name.split(".").pop().toLowerCase()
+        : "";
+    return ALLOWED_DOCUMENT_EXTENSIONS.includes(extension);
 }
 
 /* ------------------------------------------------------------------ */
@@ -588,6 +608,160 @@ function IOSDownloadConfirmAlert({ open, onCancel, onConfirm }) {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Upload Progress Overlay (iOS / macOS style)                        */
+/* ------------------------------------------------------------------ */
+
+function IOSUploadProgressOverlay({ upload, onCancel }) {
+    if (!upload?.visible) return null;
+
+    const { fileName, fileSize, progress, phase, errorMessage } = upload;
+
+    const isUploading = phase === "uploading";
+    const isExtracting = phase === "extracting";
+    const isSuccess = phase === "success";
+    const isError = phase === "error";
+    const isCancelling = phase === "cancelling";
+    const isCancelled = phase === "cancelled";
+
+    const isActive = isUploading || isExtracting || isCancelling;
+    const canCancel = (isUploading || isExtracting) && typeof onCancel === "function";
+
+    const percent = Math.max(0, Math.min(100, Math.round(progress || 0)));
+
+    const barColor = isError || isCancelled
+        ? "#ef4444"
+        : isSuccess
+            ? "#10b981"
+            : "var(--accent-primary)";
+
+    const iconBg = isError || isCancelled
+        ? "#ef4444"
+        : isSuccess
+            ? "#10b981"
+            : "var(--accent-primary)";
+
+    return (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/35 p-4 backdrop-blur-[3px]">
+            <div
+                className={`w-full max-w-[380px] overflow-hidden rounded-[28px] border shadow-[0_30px_80px_rgba(15,23,42,0.35)] backdrop-blur-2xl ${THEME.panel}`}
+            >
+                {/* Header icon */}
+                <div className="flex flex-col items-center px-6 pt-7">
+                    <div
+                        className="flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-lg transition-colors"
+                        style={{ backgroundColor: iconBg }}
+                    >
+                        {isError || isCancelled ? (
+                            <X size={26} strokeWidth={2.6} />
+                        ) : isSuccess ? (
+                            <Check size={26} strokeWidth={3} />
+                        ) : (
+                            <Upload size={24} strokeWidth={2.4} />
+                        )}
+                    </div>
+
+                    <h3 className={`mt-4 text-center text-[17px] font-bold ${THEME.textPrimary}`}>
+                        {isUploading && "Uploading document…"}
+                        {isExtracting && "Extracting text…"}
+                        {isCancelling && "Cancelling…"}
+                        {isSuccess && "Document ready"}
+                        {isError && "Upload failed"}
+                        {isCancelled && "Upload cancelled"}
+                    </h3>
+
+                    <p className={`mt-1 max-w-[300px] truncate text-center text-xs font-medium ${THEME.textMuted}`}>
+                        {fileName}
+                    </p>
+                    {fileSize > 0 && (
+                        <p className={`mt-0.5 text-[11px] ${THEME.textMuted}`}>
+                            {formatBytes(fileSize)}
+                        </p>
+                    )}
+                </div>
+
+                {/* Progress bar */}
+                <div className="px-6 pb-5 pt-5">
+                    <div className={`relative h-2 w-full overflow-hidden rounded-full ${THEME.elevated}`}>
+                        <div
+                            className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-300 ease-out"
+                            style={{
+                                width: `${isError || isSuccess || isCancelled ? 100 : percent}%`,
+                                backgroundColor: barColor,
+                            }}
+                        />
+                        {/* Shimmer highlight while active */}
+                        {isActive && !isCancelling && (
+                            <div
+                                className="pointer-events-none absolute inset-y-0 left-0 rounded-full opacity-60"
+                                style={{
+                                    width: `${percent}%`,
+                                    background:
+                                        "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.7) 50%, transparent 100%)",
+                                    animation: "tts-shimmer 1.4s linear infinite",
+                                }}
+                            />
+                        )}
+                    </div>
+
+                    <div className="mt-2.5 flex items-center justify-between">
+                        <p className={`text-[11px] font-semibold ${THEME.textMuted}`}>
+                            {isError
+                                ? errorMessage || "Please try again"
+                                : isCancelled
+                                    ? "Cancelled by you"
+                                    : isSuccess
+                                        ? "Extracted successfully"
+                                        : isCancelling
+                                            ? "Stopping request…"
+                                            : isExtracting
+                                                ? "Reading document contents…"
+                                                : "Sending to server…"}
+                        </p>
+                        <p
+                            className="text-[11px] font-bold tabular-nums"
+                            style={{ color: barColor }}
+                        >
+                            {isError || isCancelled ? "—" : `${percent}%`}
+                        </p>
+                    </div>
+                </div>
+
+                {/* Cancel button (only while active) */}
+                {canCancel && (
+                    <div className={`border-t ${THEME.border}`}>
+                        <button
+                            type="button"
+                            onClick={onCancel}
+                            className={`flex min-h-12 w-full items-center justify-center text-[16px] font-semibold transition active:bg-[var(--bg-elevated)] ${THEME.textMuted}`}
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                )}
+
+                {isCancelling && (
+                    <div className={`border-t ${THEME.border}`}>
+                        <div className={`flex min-h-12 w-full items-center justify-center gap-2 text-[14px] font-semibold ${THEME.textMuted}`}>
+                            <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-t-transparent"
+                                style={{ borderColor: "var(--text-muted)", borderTopColor: "transparent" }} />
+                            Cancelling…
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Keyframes for the shimmer animation, injected once */}
+            <style>{`
+                @keyframes tts-shimmer {
+                    0% { transform: translateX(-100%); }
+                    100% { transform: translateX(200%); }
+                }
+            `}</style>
+        </div>
+    );
+}
+
+/* ------------------------------------------------------------------ */
 /*  Download Progress Card                                             */
 /* ------------------------------------------------------------------ */
 
@@ -763,6 +937,40 @@ export default function Dashboard() {
     const [systemAudioReady, setSystemAudioReady] = useState(false);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+    /* Drag & Drop state for the message box */
+    const [isDragging, setIsDragging] = useState(false);
+    const dragCounterRef = useRef(0);
+
+    /* Upload progress overlay state (iOS/macOS style) */
+    const [uploadProgress, setUploadProgress] = useState({
+        visible: false,
+        fileName: "",
+        fileSize: 0,
+        progress: 0,
+        phase: "idle", // idle | uploading | extracting | cancelling | success | error | cancelled
+        errorMessage: "",
+    });
+    const uploadProgressTimerRef = useRef(null);
+    const uploadHideTimerRef = useRef(null);
+    /* AbortController for the in-flight upload (used by the Cancel button) */
+    const uploadAbortRef = useRef(null);
+    /* Track whether we cancelled the current upload intentionally */
+    const uploadCancelledRef = useRef(false);
+    /*
+     * Monotonic request ID. Every new upload increments this.
+     * When a request resolves, we compare its captured ID with the current
+     * value. If they differ, the response is stale (superseded or cancelled)
+     * and MUST be ignored — this is what prevents the message box from being
+     * filled after the user pressed Cancel.
+     */
+    const uploadRequestIdRef = useRef(0);
+    /*
+     * Track which request ID owns the documentLoading state.
+     * This prevents the loader from getting stuck when a cancelled request
+     * skips its finally block.
+     */
+    const documentLoadingIdRef = useRef(0);
+
     const [downloadConfirmOpen, setDownloadConfirmOpen] = useState(false);
     const [downloadState, setDownloadState] = useState(null);
     const [downloadProgress, setDownloadProgress] = useState(0);
@@ -805,6 +1013,11 @@ export default function Dashboard() {
     useEffect(() => {
         return () => {
             if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+            if (uploadProgressTimerRef.current) clearInterval(uploadProgressTimerRef.current);
+            if (uploadHideTimerRef.current) clearTimeout(uploadHideTimerRef.current);
+            if (uploadAbortRef.current) {
+                try { uploadAbortRef.current.abort(); } catch { /* ignore */ }
+            }
             if (window.speechSynthesis) window.speechSynthesis.cancel();
             if (downloadAbortRef.current) {
                 try { downloadAbortRef.current.abort(); } catch { /* ignore */ }
@@ -1305,31 +1518,221 @@ ${textValue}
         }
     }, [text]);
 
-    const handleDocumentUpload = async (event) => {
-        const file = event.target.files?.[0];
-        event.target.value = "";
+    /* ------------------------------------------------------------------ */
+    /*  Upload progress helpers (iOS/macOS style)                          */
+    /* ------------------------------------------------------------------ */
 
+    const resetUploadProgress = () => {
+        if (uploadProgressTimerRef.current) {
+            clearInterval(uploadProgressTimerRef.current);
+            uploadProgressTimerRef.current = null;
+        }
+        if (uploadHideTimerRef.current) {
+            clearTimeout(uploadHideTimerRef.current);
+            uploadHideTimerRef.current = null;
+        }
+        uploadAbortRef.current = null;
+        uploadCancelledRef.current = false;
+        setUploadProgress({
+            visible: false,
+            fileName: "",
+            fileSize: 0,
+            progress: 0,
+            phase: "idle",
+            errorMessage: "",
+        });
+    };
+
+    /* Simulate a smooth upload phase (0 → ~90%) while the real request runs */
+    const startSimulatedUpload = (fileName, fileSize) => {
+        if (uploadProgressTimerRef.current) {
+            clearInterval(uploadProgressTimerRef.current);
+            uploadProgressTimerRef.current = null;
+        }
+        if (uploadHideTimerRef.current) {
+            clearTimeout(uploadHideTimerRef.current);
+            uploadHideTimerRef.current = null;
+        }
+
+        setUploadProgress({
+            visible: true,
+            fileName,
+            fileSize,
+            progress: 0,
+            phase: "uploading",
+            errorMessage: "",
+        });
+
+        // Larger files take a bit longer to reach ~90%
+        const totalDurationMs = Math.min(
+            6000,
+            Math.max(1800, (fileSize / (1024 * 1024)) * 900)
+        );
+        const tickMs = 120;
+        const steps = Math.max(1, Math.floor(totalDurationMs / tickMs));
+        let tick = 0;
+
+        uploadProgressTimerRef.current = setInterval(() => {
+            tick += 1;
+            // Ease-out curve: fast at first, slowing near 90%
+            const raw = tick / steps;
+            const eased = 1 - Math.pow(1 - Math.min(raw, 1), 2.2);
+            const next = Math.min(90, Math.round(eased * 90));
+
+            setUploadProgress((prev) => {
+                if (!prev.visible) return prev;
+                if (prev.phase !== "uploading") return prev;
+                return { ...prev, progress: Math.max(prev.progress, next) };
+            });
+
+            if (tick >= steps) {
+                clearInterval(uploadProgressTimerRef.current);
+                uploadProgressTimerRef.current = null;
+                setUploadProgress((prev) =>
+                    prev.phase === "uploading"
+                        ? { ...prev, progress: 90, phase: "extracting" }
+                        : prev
+                );
+            }
+        }, tickMs);
+    };
+
+    /* Fill the remaining 90 → 100 and show success, then auto-hide */
+    const completeUploadProgress = (fileName, fileSize) => {
+        if (uploadProgressTimerRef.current) {
+            clearInterval(uploadProgressTimerRef.current);
+            uploadProgressTimerRef.current = null;
+        }
+
+        setUploadProgress((prev) => ({
+            ...prev,
+            visible: true,
+            fileName: fileName || prev.fileName,
+            fileSize: fileSize || prev.fileSize,
+            progress: 100,
+            phase: "success",
+            errorMessage: "",
+        }));
+
+        if (uploadHideTimerRef.current) clearTimeout(uploadHideTimerRef.current);
+        uploadHideTimerRef.current = setTimeout(() => {
+            setUploadProgress((prev) => ({ ...prev, visible: false }));
+            uploadHideTimerRef.current = null;
+            // Fully reset after the fade-out
+            uploadHideTimerRef.current = setTimeout(() => {
+                resetUploadProgress();
+                uploadHideTimerRef.current = null;
+            }, 260);
+        }, 900);
+    };
+
+    const failUploadProgress = (fileName, message) => {
+        if (uploadProgressTimerRef.current) {
+            clearInterval(uploadProgressTimerRef.current);
+            uploadProgressTimerRef.current = null;
+        }
+
+        setUploadProgress((prev) => ({
+            ...prev,
+            visible: true,
+            fileName: fileName || prev.fileName,
+            progress: 100,
+            phase: "error",
+            errorMessage: message || "Please try again",
+        }));
+
+        if (uploadHideTimerRef.current) clearTimeout(uploadHideTimerRef.current);
+        uploadHideTimerRef.current = setTimeout(() => {
+            setUploadProgress((prev) => ({ ...prev, visible: false }));
+            uploadHideTimerRef.current = null;
+            uploadHideTimerRef.current = setTimeout(() => {
+                resetUploadProgress();
+                uploadHideTimerRef.current = null;
+            }, 260);
+        }, 1600);
+    };
+
+    /* User pressed Cancel on the progress overlay */
+    const cancelUploadProgress = () => {
+        // Nothing to cancel
+        if (!uploadProgress.visible) return;
+        if (uploadProgress.phase !== "uploading" && uploadProgress.phase !== "extracting") return;
+
+        // Mark as cancelled AND invalidate the request ID so that even if the
+        // network promise resolves successfully, we ignore its payload.
+        uploadCancelledRef.current = true;
+        uploadRequestIdRef.current += 1;
+
+        // Immediately release the document-loading state for THIS request.
+        // Since we invalidated the ID above, the in-flight request's finally
+        // block will not clear it, so we clear it here.
+        documentLoadingIdRef.current = 0;
+        setDocumentLoading(false);
+
+        // Stop the simulated progress animation
+        if (uploadProgressTimerRef.current) {
+            clearInterval(uploadProgressTimerRef.current);
+            uploadProgressTimerRef.current = null;
+        }
+
+        // Abort the network request
+        if (uploadAbortRef.current) {
+            try { uploadAbortRef.current.abort(); } catch { /* ignore */ }
+            uploadAbortRef.current = null;
+        }
+
+        // Clear any pending hide timer from a previous state
+        if (uploadHideTimerRef.current) {
+            clearTimeout(uploadHideTimerRef.current);
+            uploadHideTimerRef.current = null;
+        }
+
+        // Show "cancelling" state briefly, then "cancelled", then auto-hide
+        setUploadProgress((prev) => ({
+            ...prev,
+            phase: "cancelling",
+            errorMessage: "",
+        }));
+
+        uploadHideTimerRef.current = setTimeout(() => {
+            setUploadProgress((prev) => ({
+                ...prev,
+                phase: "cancelled",
+                progress: 100,
+            }));
+            uploadHideTimerRef.current = setTimeout(() => {
+                setUploadProgress((prev) => ({ ...prev, visible: false }));
+                uploadHideTimerRef.current = null;
+                uploadHideTimerRef.current = setTimeout(() => {
+                    resetUploadProgress();
+                    uploadHideTimerRef.current = null;
+                }, 260);
+            }, 900);
+        }, 200);
+    };
+
+    /* ------------------------------------------------------------------ */
+    /*  Document upload handler (shared by button + drag/drop)            */
+    /* ------------------------------------------------------------------ */
+
+    const processDocumentFile = async (file) => {
         if (!file) return;
 
-        const allowedExtensions = ["pdf", "txt", "docx", "epub"];
-        const extension = file.name.includes(".")
-            ? file.name.split(".").pop().toLowerCase()
-            : "";
-
-        if (!allowedExtensions.includes(extension)) {
+        if (!isSupportedDocumentFile(file)) {
             showError("Unsupported document type. Please upload a PDF, TXT, DOCX, or EPUB file.");
+            failUploadProgress(file.name, "Unsupported file type");
             return;
         }
 
-        const maxDocumentSize = 10 * 1024 * 1024;
-
-        if (file.size > maxDocumentSize) {
+        if (file.size > MAX_DOCUMENT_SIZE) {
             showError("Document size cannot exceed 10 MB.");
+            failUploadProgress(file.name, "File exceeds 10 MB");
             return;
         }
 
         if (!token) {
             showError("Your session has expired. Please log in again.");
+            failUploadProgress(file.name, "Session expired");
             return;
         }
 
@@ -1337,11 +1740,55 @@ ${textValue}
         setError("");
         setSuccess("");
         hideToast();
-        showToast(`Extracting text from ${file.name}`, "loading");
+
+        // Reset cancel flag for this new upload
+        uploadCancelledRef.current = false;
+
+        // Increment request ID — any previous in-flight request becomes stale.
+        uploadRequestIdRef.current += 1;
+        const myRequestId = uploadRequestIdRef.current;
+
+        // Track who owns the loading state
+        documentLoadingIdRef.current = myRequestId;
+
+        // Fresh AbortController for this upload (used by the Cancel button)
+        uploadAbortRef.current = new AbortController();
+        const mySignal = uploadAbortRef.current.signal;
+
+        // Show the iOS-style progress overlay (upload → extract → done)
+        startSimulatedUpload(file.name, file.size);
 
         try {
-            const data = await extractDocumentText(file, token);
+            const data = await extractDocumentText(file, token, mySignal);
             const extractedText = String(data?.text || "").trim();
+
+            /*
+             * CRITICAL CHECK #1: If this request is stale (a newer upload started
+             * or the user pressed Cancel), ignore the response completely.
+             */
+            if (myRequestId !== uploadRequestIdRef.current) {
+                console.log("Ignoring stale upload response (superseded).");
+                return;
+            }
+
+            /*
+             * CRITICAL CHECK #2: If the user pressed Cancel while the request
+             * was in flight, ignore the successful payload entirely — do NOT
+             * touch the text box or success message.
+             */
+            if (uploadCancelledRef.current) {
+                console.log("Ignoring upload response after user cancelled.");
+                return;
+            }
+
+            /*
+             * CRITICAL CHECK #3: If the AbortController has been aborted,
+             * discard the result regardless of what the network returned.
+             */
+            if (mySignal.aborted) {
+                console.log("Ignoring upload response: signal aborted.");
+                return;
+            }
 
             if (!extractedText) {
                 throw new Error("No readable text was found in the uploaded document.");
@@ -1381,8 +1828,30 @@ ${textValue}
                 );
             }
 
+            completeUploadProgress(data?.filename || file.name, file.size);
             showToast("Document text extracted successfully.", "success", 3200);
         } catch (err) {
+            // If the user explicitly cancelled, do not show an error toast
+            const wasCancelled =
+                uploadCancelledRef.current ||
+                err?.name === "CanceledError" ||
+                err?.name === "AbortError" ||
+                err?.code === "ERR_CANCELED" ||
+                mySignal.aborted;
+
+            if (wasCancelled) {
+                console.log("Document upload cancelled by user.");
+                // The cancelUploadProgress function already handles the UI;
+                // just make sure we don't fall through to the error path.
+                return;
+            }
+
+            // Also ignore stale errors from superseded requests
+            if (myRequestId !== uploadRequestIdRef.current) {
+                console.log("Ignoring stale upload error (superseded).");
+                return;
+            }
+
             console.error("DOCUMENT EXTRACTION ERROR:", err);
 
             const status = err?.response?.status;
@@ -1401,10 +1870,73 @@ ${textValue}
             }
 
             showError(errorMessage);
+            failUploadProgress(file.name, errorMessage);
         } finally {
-            setDocumentLoading(false);
+            /*
+             * Only clear the loading state if THIS request still owns it.
+             * When the user cancels, cancelUploadProgress() already sets
+             * documentLoadingIdRef.current = 0 and setDocumentLoading(false),
+             * so this block correctly does nothing.
+             */
+            if (documentLoadingIdRef.current === myRequestId) {
+                documentLoadingIdRef.current = 0;
+                uploadAbortRef.current = null;
+                setDocumentLoading(false);
+            }
         }
     };
+
+    const handleDocumentUpload = async (event) => {
+        const file = event.target.files?.[0];
+        event.target.value = "";
+        await processDocumentFile(file);
+    };
+
+    /* ------------------------------------------------------------------ */
+    /*  Drag & Drop handlers for the message box                          */
+    /* ------------------------------------------------------------------ */
+
+    const handleDragEnter = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        dragCounterRef.current += 1;
+        if (event.dataTransfer?.types?.includes("Files")) {
+            setIsDragging(true);
+        }
+    };
+
+    const handleDragOver = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (event.dataTransfer) {
+            event.dataTransfer.dropEffect = "copy";
+        }
+    };
+
+    const handleDragLeave = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        dragCounterRef.current -= 1;
+        if (dragCounterRef.current <= 0) {
+            dragCounterRef.current = 0;
+            setIsDragging(false);
+        }
+    };
+
+    const handleDrop = async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        dragCounterRef.current = 0;
+        setIsDragging(false);
+
+        const files = event.dataTransfer?.files;
+        if (!files || files.length === 0) return;
+
+        const file = files[0];
+        await processDocumentFile(file);
+    };
+
+    /* ------------------------------------------------------------------ */
 
     const handleGenerate = async () => {
         if (!text.trim()) { showError("Please enter some text before generating speech."); return; }
@@ -1560,11 +2092,23 @@ ${textValue}
     };
 
     const handleClear = () => {
+        // Cancel any in-flight upload first
+        uploadRequestIdRef.current += 1;
+        uploadCancelledRef.current = false;
+        documentLoadingIdRef.current = 0;
+        setDocumentLoading(false);
+
+        if (uploadAbortRef.current) {
+            try { uploadAbortRef.current.abort(); } catch { /* ignore */ }
+            uploadAbortRef.current = null;
+        }
+
         setText("");
         setDocumentName(""); setError(""); setSuccess(""); setActiveChatId(null);
         setCurrentTime(0); setDuration(0); setIsPlaying(false);
         setSystemAudioReady(false);
         hideToast();
+        resetUploadProgress();
         if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0; }
         if (window.speechSynthesis) window.speechSynthesis.cancel();
         systemSpeechRef.current = null;
@@ -1768,12 +2312,6 @@ ${textValue}
                 onLogout={() => setLogoutAlert(true)}
             />
 
-            {/* 
-              Content wrapper:
-              - On mobile: no left padding (sidebar is off-canvas)
-              - On desktop: padding matches sidebar width (72px collapsed / 285px expanded)
-              - The `transition-[padding]` makes the shift smooth when collapsing
-            */}
             <div
                 className={`min-h-screen transition-[padding-left] duration-300 ease-out ${
                     sidebarCollapsed ? "lg:pl-[72px]" : "lg:pl-[285px]"
@@ -1839,7 +2377,7 @@ ${textValue}
                                         </div>
                                     </div>
                                     <p className={`mt-1 text-xs sm:text-sm ${THEME.textMuted}`}>
-                                        Write, paste, or upload a document to convert it into speech.
+                                        Write, paste, upload, or drag & drop a document to convert it into speech.
                                     </p>
                                 </div>
 
@@ -1886,7 +2424,16 @@ ${textValue}
                                 </div>
                             )}
 
-                            <div className="relative">
+                            {/* ---------------------------------------------------------------- */}
+                            {/*  Message box with drag & drop support                           */}
+                            {/* ---------------------------------------------------------------- */}
+                            <div
+                                className="relative"
+                                onDragEnter={handleDragEnter}
+                                onDragOver={handleDragOver}
+                                onDragLeave={handleDragLeave}
+                                onDrop={handleDrop}
+                            >
                                 <textarea
                                     value={text}
                                     onChange={(e) => {
@@ -1895,9 +2442,38 @@ ${textValue}
                                     }}
                                     maxLength={MAX_CHARACTERS}
                                     rows={12}
-                                    placeholder="Type or paste your text here..."
-                                    className={`min-h-[270px] w-full resize-y rounded-[22px] border px-4 py-4 text-[15px] leading-7 outline-none transition placeholder:text-[var(--text-muted)] focus:border-transparent focus:bg-[var(--bg-surface)] focus:shadow-[0_0_0_3px_var(--accent-soft)] sm:min-h-[310px] sm:px-5 sm:py-5 sm:text-base ${THEME.border} ${THEME.elevated} ${THEME.textPrimary}`}
+                                    placeholder="Type or paste your text here... or drag & drop a PDF, TXT, DOCX, or EPUB file"
+                                    className={`min-h-[270px] w-full resize-y rounded-[22px] border px-4 py-4 text-[15px] leading-7 outline-none transition placeholder:text-[var(--text-muted)] focus:border-transparent focus:bg-[var(--bg-surface)] focus:shadow-[0_0_0_3px_var(--accent-soft)] sm:min-h-[310px] sm:px-5 sm:py-5 sm:text-base ${
+                                        isDragging
+                                            ? "border-transparent bg-[var(--bg-surface)] shadow-[0_0_0_3px_var(--accent-soft)]"
+                                            : `${THEME.border} ${THEME.elevated}`
+                                    } ${THEME.textPrimary}`}
                                 />
+
+                                {/* Drag overlay */}
+                                {isDragging && (
+                                    <div
+                                        className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-[22px] border-2 border-dashed"
+                                        style={{
+                                            borderColor: "var(--accent-primary)",
+                                            backgroundColor: "color-mix(in srgb, var(--bg-surface) 85%, transparent)",
+                                        }}
+                                    >
+                                        <div
+                                            className="flex h-12 w-12 items-center justify-center rounded-2xl text-white"
+                                            style={{ backgroundColor: "var(--accent-primary)" }}
+                                        >
+                                            <Upload size={22} />
+                                        </div>
+                                        <p className={`text-sm font-bold ${THEME.textPrimary}`}>
+                                            Drop your document here
+                                        </p>
+                                        <p className={`text-xs ${THEME.textMuted}`}>
+                                            PDF, TXT, DOCX, or EPUB · max 10 MB
+                                        </p>
+                                    </div>
+                                )}
+
                                 <div className="pointer-events-none absolute bottom-3 left-3 right-3 flex items-end justify-between sm:bottom-4 sm:left-4 sm:right-4">
                                     <span className={`rounded-lg bg-[var(--bg-surface)]/90 px-2 py-1 text-[11px] font-medium shadow-sm backdrop-blur ${THEME.textMuted}`}>
                                         {wordCount} {wordCount === 1 ? "word" : "words"}
@@ -1907,6 +2483,7 @@ ${textValue}
                                     </span>
                                 </div>
                             </div>
+                            {/* ---------------------------------------------------------------- */}
 
                             <div className="mt-5 grid gap-4 sm:grid-cols-2">
                                 <IOSDropdown
@@ -2124,7 +2701,7 @@ ${textValue}
                                             <button
                                                 type="button"
                                                 onClick={skipForward}
-                                                disabled={!audioUrl}
+                                                   disabled={!audioUrl}
                                                 className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition active:scale-90 disabled:cursor-not-allowed disabled:opacity-40 ${THEME.elevated} ${THEME.textPrimary} hover:bg-[var(--bg-surface)]`}
                                                 title={audioUrl ? "Skip forward 10 seconds" : "Not available for system voice"}
                                             >
@@ -2216,6 +2793,14 @@ ${textValue}
                 onCancel={() => setLogoutAlert(false)}
                 onConfirm={handleLogout}
             />
+
+            {/* iOS / macOS style upload progress overlay */}
+            <IOSUploadProgressOverlay
+                upload={uploadProgress}
+                onCancel={cancelUploadProgress}
+            />
+
+            <AIAssistant />
         </div>
     );
-}       
+}

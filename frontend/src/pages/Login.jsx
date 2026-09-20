@@ -180,10 +180,7 @@ function Login() {
           </div>
         </div>
 
-        <div className="tts-anim-fade-up delay-4 relative z-10 flex items-center gap-2 text-xs text-slate-400">
-          <Sparkles size={14} />
-          Powered by Puter AI
-        </div>
+        
       </div>
 
       <div className="relative flex w-full flex-col items-center justify-center px-4 py-10 sm:px-8 lg:w-1/2 lg:px-12">

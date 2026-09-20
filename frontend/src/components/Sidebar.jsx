@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
+  Check,
   ChevronDown,
   ChevronRight,
   Ellipsis,
@@ -9,13 +10,16 @@ import {
   PanelLeft,
   Pencil,
   Pin,
+  PinOff,
   Plus,
   Search,
   Settings,
   Trash2,
   UserCircle,
   X,
+  ListChecks
 } from "lucide-react";
+
 import { useNavigate } from "react-router-dom";
 import { deleteHistoryItem } from "../services/api";
 
@@ -107,8 +111,6 @@ function getLanguageName(language) {
   return names[code] || names[code.split("-")[0]] || (language || "Language");
 }
 
-// Theme-aware utility classes
-
 const THEME = {
   sidebar: "bg-[var(--bg-surface)] border-[var(--border-soft)]",
   panel: "bg-[var(--bg-surface)] border-[var(--border-soft)]",
@@ -119,22 +121,18 @@ const THEME = {
     "hover:bg-[var(--bg-elevated)] active:bg-[var(--bg-elevated)]",
 };
 
-// Accent-aware style helper (supports Rainbow gradient)
-
 function accentBg() {
   return {
     background: "var(--accent-gradient, var(--accent-primary))",
   };
 }
 
-// Detect Mac for keyboard glyph
-
 function isMacPlatform() {
   if (typeof navigator === "undefined") return false;
   return /Mac|iPhone|iPod|iPad/i.test(navigator.platform || navigator.userAgent || "");
 }
 
-// Confirm alert
+/* Confirm alert */
 
 function IOSConfirmAlert({
   open,
@@ -171,11 +169,10 @@ function IOSConfirmAlert({
             type="button"
             disabled={loading}
             onClick={onConfirm}
-            className={`flex min-h-12 w-full items-center justify-center border-b border-[var(--border-soft)] text-[16px] font-bold transition active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 ${
-              danger
+            className={`flex min-h-12 w-full items-center justify-center border-b border-[var(--border-soft)] text-[16px] font-bold transition active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 ${danger
                 ? "bg-red-600 text-white hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-500"
                 : "text-[var(--accent-primary)] active:bg-[var(--bg-elevated)]"
-            }`}
+              }`}
           >
             {loading ? "Deleting..." : confirmText}
           </button>
@@ -194,7 +191,49 @@ function IOSConfirmAlert({
   );
 }
 
-// Rename alert
+/* Info alert (single OK button) */
+
+function IOSInfoAlert({
+  open,
+  title,
+  message,
+  buttonText = "OK",
+  onClose,
+}) {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-[220] flex items-end justify-center bg-black/30 p-3 backdrop-blur-[2px] sm:items-center sm:p-5">
+      <div
+        className={`w-full max-w-[390px] overflow-hidden rounded-[28px] border shadow-2xl backdrop-blur-xl ${THEME.panel}`}
+      >
+        <div className="px-6 pb-5 pt-6 text-center">
+          <h3
+            className={`text-[17px] font-bold tracking-tight ${THEME.textPrimary}`}
+          >
+            {title}
+          </h3>
+
+          <p className={`mt-2 text-sm leading-5 ${THEME.textMuted}`}>
+            {message}
+          </p>
+        </div>
+
+        <div className="border-t border-[var(--border-soft)]">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex min-h-12 w-full items-center justify-center text-[16px] font-bold text-[var(--accent-primary)] transition active:bg-[var(--bg-elevated)]"
+          >
+            {buttonText}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* Rename alert */
 
 function IOSRenameAlert({ open, value, onChange, onCancel, onConfirm }) {
   const inputRef = useRef(null);
@@ -275,11 +314,11 @@ function IOSRenameAlert({ open, value, onChange, onCancel, onConfirm }) {
 
 /*  Chat options menu                                                  */
 
-function ChatOptionsMenu({ position, pinned, onPin, onRename, onDelete }) {
+function ChatOptionsMenu({ position, pinned, onPin, onRename, onDelete, onSelectMultiple }) {
   if (!position) return null;
 
-  const menuWidth = 176;
-  const menuHeight = 145;
+  const menuWidth = 196;
+  const menuHeight = 185;
 
   let left = position.left;
   let top = position.top;
@@ -299,7 +338,7 @@ function ChatOptionsMenu({ position, pinned, onPin, onRename, onDelete }) {
   return createPortal(
     <div
       data-chat-options-menu="true"
-      className={`fixed z-[150] w-44 overflow-hidden rounded-2xl border p-1.5 shadow-2xl shadow-slate-900/15 dark:shadow-black/40 ${THEME.panel}`}
+      className={`fixed z-[150] w-48 overflow-hidden rounded-2xl border p-1.5 shadow-2xl shadow-slate-900/15 dark:shadow-black/40 ${THEME.panel}`}
       style={{ left, top }}
       onMouseDown={(event) => event.stopPropagation()}
       onClick={(event) => event.stopPropagation()}
@@ -312,11 +351,10 @@ function ChatOptionsMenu({ position, pinned, onPin, onRename, onDelete }) {
         <Pin
           size={17}
           strokeWidth={2}
-          className={`shrink-0 ${
-            pinned
+          className={`shrink-0 ${pinned
               ? "fill-current text-[var(--accent-primary)]"
               : "text-[var(--text-muted)]"
-          }`}
+            }`}
         />
         <span>{pinned ? "Unpin" : "Pin"}</span>
       </button>
@@ -332,6 +370,19 @@ function ChatOptionsMenu({ position, pinned, onPin, onRename, onDelete }) {
           className="shrink-0 text-[var(--text-muted)]"
         />
         <span>Rename</span>
+      </button>
+
+      <button
+        type="button"
+        onClick={onSelectMultiple}
+        className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition ${THEME.textPrimary} ${THEME.hoverSoft}`}
+      >
+        <ListChecks
+          size={17}
+          strokeWidth={2}
+          className="shrink-0 text-[var(--text-muted)]"
+        />
+        <span>Multi-select</span>
       </button>
 
       <button
@@ -376,11 +427,10 @@ function SidebarToggleButton({ collapsed, onClick }) {
           type="button"
           onClick={onClick}
           aria-label={collapsed ? "Open sidebar" : "Close sidebar"}
-          className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
-            hover
+          className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${hover
               ? "bg-[var(--bg-elevated)] text-[var(--text-primary)]"
               : "text-[var(--text-muted)]"
-          }`}
+            }`}
         >
           <PanelLeft size={18} />
         </button>
@@ -421,7 +471,6 @@ function NewChatButton({ collapsed, onNewChat }) {
   const handleMouseEnter = () => {
     if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
 
-    // Show tooltip after ~700ms of hover
     hoverTimerRef.current = setTimeout(() => {
       if (wrapperRef.current) {
         setButtonRect(wrapperRef.current.getBoundingClientRect());
@@ -439,7 +488,6 @@ function NewChatButton({ collapsed, onNewChat }) {
   };
 
   const handleClick = () => {
-    // Hide tooltip immediately on click
     if (hoverTimerRef.current) {
       clearTimeout(hoverTimerRef.current);
       hoverTimerRef.current = null;
@@ -448,7 +496,6 @@ function NewChatButton({ collapsed, onNewChat }) {
     onNewChat?.();
   };
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
@@ -467,9 +514,8 @@ function NewChatButton({ collapsed, onNewChat }) {
           type="button"
           onClick={handleClick}
           title="New Chat"
-          className={`flex min-h-11 w-full items-center gap-3 rounded-xl border border-[var(--border-soft)] bg-[var(--bg-surface)] ${
-            collapsed ? "justify-center px-2" : "px-3.5"
-          } text-sm font-semibold shadow-sm transition hover:bg-[var(--bg-elevated)] active:scale-[0.99] ${THEME.textPrimary}`}
+          className={`flex min-h-11 w-full items-center gap-3 rounded-xl border border-[var(--border-soft)] bg-[var(--bg-surface)] ${collapsed ? "justify-center px-2" : "px-3.5"
+            } text-sm font-semibold shadow-sm transition hover:bg-[var(--bg-elevated)] active:scale-[0.99] ${THEME.textPrimary}`}
         >
           <div
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-white"
@@ -546,7 +592,6 @@ export default function Sidebar({
     }
   });
 
-  const [pinLimitMessage, setPinLimitMessage] = useState("");
   const [autoHistoryLoading, setAutoHistoryLoading] = useState(
     historyLoading === null && safeHistory.length === 0
   );
@@ -559,7 +604,16 @@ export default function Sidebar({
     }
   });
 
-  // Ref to the search input so Ctrl+K can focus it
+  /* Multi-select state */
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [multiDeleteOpen, setMultiDeleteOpen] = useState(false);
+  const [multiDeleteLoading, setMultiDeleteLoading] = useState(false);
+  const [multiUnpinOpen, setMultiUnpinOpen] = useState(false);
+
+  /* Pin limit alert */
+  const [pinLimitAlert, setPinLimitAlert] = useState(null);
+
   const searchInputRef = useRef(null);
 
   useEffect(() => {
@@ -615,35 +669,26 @@ export default function Sidebar({
     });
   }, [safeHistory, historyLoading]);
 
-  useEffect(() => {
-    if (!pinLimitMessage) return;
+  /* Keyboard shortcuts */
 
-    const timer = setTimeout(() => setPinLimitMessage(""), 2500);
-    return () => clearTimeout(timer);
-  }, [pinLimitMessage]);
-
-  /* ---------------------------------------------------------------- */
-  /*  Keyboard shortcuts                                              */
-  /*    Ctrl+J / ⌘J  → New Chat                                       */
-  /*    Ctrl+K / ⌘K  → Focus search bar (expands sidebar if needed)  */
-  /*  Both skip when a modal / dropdown is open.                      */
-  /* ---------------------------------------------------------------- */
-
-  const modalOpen = Boolean(renameChat) || Boolean(deleteChat) || Boolean(unpinChat);
+  const modalOpen =
+    Boolean(renameChat) ||
+    Boolean(deleteChat) ||
+    Boolean(unpinChat) ||
+    multiDeleteOpen ||
+    multiUnpinOpen ||
+    Boolean(pinLimitAlert);
 
   useEffect(() => {
     const handleKeyDown = (event) => {
       const isModifier = event.ctrlKey || event.metaKey;
       if (!isModifier) return;
 
-      // Ignore shift/alt combos
       if (event.shiftKey || event.altKey) return;
 
       const key = event.key.toLowerCase();
 
-      // ---- Ctrl+J / ⌘J → New Chat ----
       if (key === "j") {
-        // Don't hijack when a modal or menu is open
         if (modalOpen) return;
         if (menuId) return;
 
@@ -658,9 +703,7 @@ export default function Sidebar({
         return;
       }
 
-      // ---- Ctrl+K / ⌘K → Focus search ----
       if (key === "k") {
-        // Don't hijack when a modal or menu is open
         if (modalOpen) return;
         if (menuId) return;
 
@@ -670,7 +713,6 @@ export default function Sidebar({
         setMenuId(null);
         setMenuPosition(null);
 
-        // If the sidebar is collapsed, expand it first so the search input exists
         if (collapsed) {
           setCollapsed(false);
           try {
@@ -683,7 +725,6 @@ export default function Sidebar({
               detail: { collapsed: false },
             })
           );
-          // Wait for the input to mount, then focus
           requestAnimationFrame(() => {
             requestAnimationFrame(() => {
               searchInputRef.current?.focus();
@@ -787,6 +828,145 @@ export default function Sidebar({
 
   const isPinned = (id) => pinnedIds.includes(String(id));
 
+  /* ---------------- Multi-select handlers ---------------- */
+
+  const enterSelectionMode = (initialId = null) => {
+    setMenuId(null);
+    setMenuPosition(null);
+    setSelectionMode(true);
+    if (initialId != null) {
+      setSelectedIds([String(initialId)]);
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const exitSelectionMode = () => {
+    setSelectionMode(false);
+    setSelectedIds([]);
+  };
+
+  const toggleSelected = (id) => {
+    const key = String(id);
+    setSelectedIds((current) =>
+      current.includes(key)
+        ? current.filter((value) => value !== key)
+        : [...current, key]
+    );
+  };
+
+  const selectedChats = useMemo(
+    () => safeHistory.filter((item) => selectedIds.includes(String(item.id))),
+    [safeHistory, selectedIds]
+  );
+
+  /* How many of the selected chats are already pinned? */
+  const selectedPinnedCount = useMemo(() => {
+    const pinnedSet = new Set(pinnedIds.map(String));
+    return selectedIds.filter((id) => pinnedSet.has(String(id))).length;
+  }, [selectedIds, pinnedIds]);
+
+  /* Show "Unpin" instead of "Pin" when at least one selected chat is pinned */
+  const showUnpinAction = selectedPinnedCount > 0;
+
+  const handleMultiPinToggle = () => {
+    if (selectedIds.length === 0) return;
+
+    /* If at least one is pinned, we're unpinning (confirm first) */
+    if (showUnpinAction) {
+      setMultiUnpinOpen(true);
+      return;
+    }
+
+    /* Pin selected chats */
+    const currentCount = pinnedIds.length;
+    const freeSlots = Math.max(0, MAX_PINNED_CHATS - currentCount);
+
+    if (freeSlots <= 0) {
+      setPinLimitAlert({
+        title: "Pin limit reached",
+        message: `You can only pin up to ${MAX_PINNED_CHATS} chats. Unpin a chat first to pin a new one.`,
+      });
+      return;
+    }
+
+    /* Filter out ones that are already pinned */
+    const pinnedSet = new Set(pinnedIds.map(String));
+    const toPin = selectedIds.filter((id) => !pinnedSet.has(String(id)));
+
+    if (toPin.length > freeSlots) {
+      setPinLimitAlert({
+        title: "Pin limit reached",
+        message: `Only ${MAX_PINNED_CHATS} chats can be pinned. You selected ${toPin.length}, but only ${freeSlots} slot${freeSlots === 1 ? "" : "s"} available.`,
+      });
+      return;
+    }
+
+    setPinnedIds((current) =>
+      [...current, ...toPin].slice(0, MAX_PINNED_CHATS)
+    );
+    setPinnedOpen(true);
+    exitSelectionMode();
+  };
+
+  const handleMultiUnpinConfirm = () => {
+    setPinnedIds((current) =>
+      current.filter((id) => !selectedIds.includes(String(id)))
+    );
+    setMultiUnpinOpen(false);
+    exitSelectionMode();
+  };
+
+  const handleMultiDeleteConfirm = async () => {
+    if (selectedIds.length === 0 || !token) return;
+
+    setMultiDeleteLoading(true);
+
+    try {
+      const idsToDelete = [...selectedIds];
+
+      await Promise.all(
+        idsToDelete.map((id) =>
+          deleteHistoryItem(id, token).catch(() => null)
+        )
+      );
+
+      const updatedHistory = safeHistory.filter(
+        (item) => !idsToDelete.includes(String(item.id))
+      );
+
+      try {
+        const saved = localStorage.getItem("tts_chat_titles");
+        const titles = saved ? JSON.parse(saved) : {};
+        idsToDelete.forEach((id) => {
+          delete titles[String(id)];
+        });
+        localStorage.setItem("tts_chat_titles", JSON.stringify(titles));
+      } catch {
+        /* ignore */
+      }
+
+      setPinnedIds((current) =>
+        current.filter((id) => !idsToDelete.includes(String(id)))
+      );
+
+      onHistoryChange?.(updatedHistory);
+
+      if (idsToDelete.includes(String(activeChatId))) {
+        onNewChat?.();
+      }
+
+      setMultiDeleteOpen(false);
+      exitSelectionMode();
+    } catch {
+      /* keep usable */
+    } finally {
+      setMultiDeleteLoading(false);
+    }
+  };
+
+  /* ---------------- Original handlers ---------------- */
+
   const handlePinToggle = (item) => {
     const id = String(item.id);
 
@@ -799,7 +979,10 @@ export default function Sidebar({
     }
 
     if (pinnedIds.length >= MAX_PINNED_CHATS) {
-      setPinLimitMessage("You can pin up to 5 chats.");
+      setPinLimitAlert({
+        title: "Pin limit reached",
+        message: `You can only pin up to ${MAX_PINNED_CHATS} chats. Unpin a chat first to pin a new one.`,
+      });
       return;
     }
 
@@ -826,8 +1009,8 @@ export default function Sidebar({
     }
 
     const rect = event.currentTarget.getBoundingClientRect();
-    const menuWidth = 176;
-    const menuHeight = 145;
+    const menuWidth = 196;
+    const menuHeight = 185;
 
     let left = rect.right - menuWidth;
     if (left < 10) left = 10;
@@ -912,13 +1095,17 @@ export default function Sidebar({
   };
 
   const handleChatSelect = (item) => {
+    if (selectionMode) {
+      toggleSelected(item.id);
+      return;
+    }
+
     setMenuId(null);
     setMenuPosition(null);
     onSelectChat?.(item);
     onMobileClose?.();
   };
 
-  /* Navigate to /account — used by the account menu dropdown */
   const handleAccountNavigate = () => {
     setMenuId(null);
     setMenuPosition(null);
@@ -993,50 +1180,68 @@ export default function Sidebar({
     };
   }, [menuId]);
 
-  /* ---------------------------------------------------------------- */
   /*  Chat row                                                        */
-  /* ---------------------------------------------------------------- */
 
   const renderChat = (item) => {
     const itemIsPinned = isPinned(item.id);
     const isActive = String(activeChatId) === String(item.id);
     const title = item.custom_title || getSavedTitle(item.id, item);
+    const isSelected = selectedIds.includes(String(item.id));
 
     return (
-      <div key={item.id} className="group relative">
+      <div
+        key={item.id}
+        className="group relative rounded-xl"
+      >
         <button
           type="button"
           onClick={() => handleChatSelect(item)}
           title={collapsed ? title : undefined}
-          className={`flex min-h-12 w-full items-center gap-3 rounded-xl ${
-            collapsed ? "justify-center px-2 py-2.5" : "px-3 py-2.5 pr-11"
-          } text-left transition ${
-            isActive
+          className={`flex min-h-12 w-full items-center gap-3 rounded-xl ${collapsed ? "justify-center px-2 py-2.5" : "px-3 py-2.5 pr-11"
+            } text-left transition ${!selectionMode && isActive
               ? "bg-[var(--bg-elevated)] ring-1 ring-[var(--border-soft)]"
-              : "hover:bg-[var(--bg-elevated)]"
-          }`}
+              : "hover:bg-[var(--bg-elevated)] active:bg-[var(--bg-elevated)]"
+            }`}
         >
-          <div
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
-            style={
-              isActive
-                ? {
+          {selectionMode && !collapsed ? (
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center">
+              <div
+                className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition ${isSelected
+                    ? "border-transparent text-white"
+                    : "border-[var(--border-soft)] bg-[var(--bg-surface)]"
+                  }`}
+                style={
+                  isSelected
+                    ? { backgroundColor: "var(--accent-primary)" }
+                    : undefined
+                }
+              >
+                {isSelected && <Check size={12} strokeWidth={3} />}
+              </div>
+            </div>
+          ) : (
+            <div
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+              style={
+                isActive && !selectionMode
+                  ? {
                     backgroundColor: "var(--accent-light)",
                     color: "var(--accent-primary)",
                   }
-                : undefined
-            }
-          >
-            <MessageCircle
-              size={18}
-              strokeWidth={1.9}
-              style={
-                isActive
-                  ? { color: "var(--accent-primary)" }
-                  : { color: "var(--text-muted)" }
+                  : undefined
               }
-            />
-          </div>
+            >
+              <MessageCircle
+                size={18}
+                strokeWidth={1.9}
+                style={
+                  isActive && !selectionMode
+                    ? { color: "var(--accent-primary)" }
+                    : { color: "var(--text-muted)" }
+                }
+              />
+            </div>
+          )}
 
           {!collapsed && (
             <div className="min-w-0 flex-1">
@@ -1064,15 +1269,14 @@ export default function Sidebar({
           )}
         </button>
 
-        {!collapsed && (
+        {!collapsed && !selectionMode && (
           <button
             type="button"
             aria-label="Chat options"
             data-chat-options-button="true"
             onClick={(event) => handleMenuToggle(event, item)}
-            className={`absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-[var(--text-muted)] transition hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] ${
-              menuId === item.id ? "bg-[var(--bg-elevated)] text-[var(--text-primary)]" : ""
-            }`}
+            className={`absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-[var(--text-muted)] transition hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] ${menuId === item.id ? "bg-[var(--bg-elevated)] text-[var(--text-primary)]" : ""
+              }`}
           >
             <Ellipsis size={18} />
           </button>
@@ -1081,9 +1285,13 @@ export default function Sidebar({
     );
   };
 
-  /* ---------------------------------------------------------------- */
   /*  Render                                                          */
-  /* ---------------------------------------------------------------- */
+
+  const selectionActive = selectionMode;
+  const selectedCount = selectedIds.length;
+
+  /* "All selected are pinned" → Unpin, otherwise → Pin */
+  const canUnpinSelection = selectedPinnedCount > 0;
 
   return (
     <>
@@ -1097,60 +1305,78 @@ export default function Sidebar({
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex flex-col border-r transition-[width,transform] duration-300 ease-out will-change-transform lg:translate-x-0 ${THEME.sidebar} ${
-          mobileOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col border-r transition-[width,transform] duration-300 ease-out will-change-transform lg:translate-x-0 ${THEME.sidebar} ${mobileOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
         style={{ width: collapsed ? 72 : 285 }}
       >
         <div className="flex h-full flex-col">
-          <div
-            className={`flex h-[72px] shrink-0 items-center border-b border-[var(--border-soft)] ${
-              collapsed ? "justify-center px-2" : "justify-between px-3"
-            }`}
-          >
+          {selectionActive ? (
+            /* Selection header */
+            <div className="flex h-[72px] shrink-0 items-center justify-between border-b border-[var(--border-soft)] px-3">
+              <div className="flex min-w-0 items-center gap-2">
+                <span className={`text-sm font-bold ${THEME.textPrimary}`}>
+                  {selectedCount} chat{selectedCount === 1 ? "" : "s"} selected
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={exitSelectionMode}
+                aria-label="Exit selection"
+                className={`flex h-9 w-9 items-center justify-center rounded-full bg-[var(--bg-elevated)] text-[var(--text-muted)] transition hover:text-[var(--text-primary)]`}
+              >
+                <X size={18} />
+              </button>
+            </div>
+          ) : (
+            /* Normal header */
             <div
-              className={`flex min-w-0 items-center ${
-                collapsed ? "" : "gap-2.5"
-              }`}
+              className={`flex h-[72px] shrink-0 items-center border-b border-[var(--border-soft)] ${collapsed ? "justify-center px-2" : "justify-between px-3"
+                }`}
             >
               <div
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white"
-                style={accentBg()}
+                className={`flex min-w-0 items-center ${collapsed ? "" : "gap-2.5"
+                  }`}
               >
-                <MessageCircle size={18} />
+                <div
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white"
+                  style={accentBg()}
+                >
+                  <MessageCircle size={18} />
+                </div>
+
+                {!collapsed && (
+                  <div className="min-w-0">
+                    <p className={`truncate text-sm font-bold ${THEME.textPrimary}`}>
+                      Text-to-Speech
+                    </p>
+                    <p className={`truncate text-[11px] ${THEME.textMuted}`}>
+                      Your speech history
+                    </p>
+                  </div>
+                )}
               </div>
 
               {!collapsed && (
-                <div className="min-w-0">
-                  <p className={`truncate text-sm font-bold ${THEME.textPrimary}`}>
-                    Text-to-Speech
-                  </p>
-                  <p className={`truncate text-[11px] ${THEME.textMuted}`}>
-                    Your speech history
-                  </p>
+                <div className="hidden lg:block">
+                  <SidebarToggleButton
+                    collapsed={false}
+                    onClick={toggleCollapsed}
+                  />
                 </div>
               )}
+
+              <button
+                type="button"
+                onClick={onMobileClose}
+                className={`flex h-9 w-9 items-center justify-center rounded-xl text-[var(--text-muted)] transition hover:bg-[var(--bg-elevated)] lg:hidden`}
+              >
+                <X size={18} />
+              </button>
             </div>
+          )}
 
-            {!collapsed && (
-              <div className="hidden lg:block">
-                <SidebarToggleButton
-                  collapsed={false}
-                  onClick={toggleCollapsed}
-                />
-              </div>
-            )}
-
-            <button
-              type="button"
-              onClick={onMobileClose}
-              className={`flex h-9 w-9 items-center justify-center rounded-xl text-[var(--text-muted)] transition hover:bg-[var(--bg-elevated)] lg:hidden`}
-            >
-              <X size={18} />
-            </button>
-          </div>
-
-          {!collapsed && (
+          {!collapsed && !selectionActive && (
             <div className="px-3 pt-3">
               <div className="relative">
                 <div className="pointer-events-none absolute left-3 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-[var(--text-muted)]">
@@ -1180,7 +1406,7 @@ export default function Sidebar({
             </div>
           )}
 
-          {collapsed && (
+          {collapsed && !selectionActive && (
             <div className="hidden justify-center pt-3 lg:flex">
               <SidebarToggleButton
                 collapsed={true}
@@ -1189,20 +1415,22 @@ export default function Sidebar({
             </div>
           )}
 
-          <div className={`${collapsed ? "px-2 pt-3" : "px-3 pt-3"}`}>
-            <NewChatButton
-              collapsed={collapsed}
-              onNewChat={() => {
-                setMenuId(null);
-                setMenuPosition(null);
-                setSearchQuery("");
-                onNewChat?.();
-                onMobileClose?.();
-              }}
-            />
-          </div>
+          {!selectionActive && (
+            <div className={`${collapsed ? "px-2 pt-3" : "px-3 pt-3"}`}>
+              <NewChatButton
+                collapsed={collapsed}
+                onNewChat={() => {
+                  setMenuId(null);
+                  setMenuPosition(null);
+                  setSearchQuery("");
+                  onNewChat?.();
+                  onMobileClose?.();
+                }}
+              />
+            </div>
+          )}
 
-          {!collapsed && (
+          {!collapsed && !selectionActive && (
             <div className="px-4 pb-2 pt-5">
               <p className={`text-[11px] font-bold uppercase tracking-wider ${THEME.textMuted}`}>
                 {searchQuery ? "Search results" : "Chats"}
@@ -1225,146 +1453,203 @@ export default function Sidebar({
               </div>
             ) : (
               <>
-                {!collapsed && pinnedIds.length > 0 && (
-                  <section className="mb-3">
-                    <button
-                      type="button"
-                      onClick={() => setPinnedOpen((current) => !current)}
-                      className="flex w-full items-center gap-1 px-2 py-1.5 text-left"
-                    >
-                      {pinnedOpen ? (
-                        <ChevronDown size={15} className="text-[var(--text-muted)]" />
-                      ) : (
-                        <ChevronRight size={15} className="text-[var(--text-muted)]" />
-                      )}
-                      <span className={`text-[11px] font-bold uppercase tracking-wider ${THEME.textMuted}`}>
-                        Pinned
-                      </span>
-                    </button>
-
-                    {pinnedOpen && (
-                      <div className="space-y-1">
-                        {pinnedHistory.length > 0 ? (
-                          pinnedHistory.map(renderChat)
-                        ) : (
-                          <p className={`px-7 py-2 text-[11px] ${THEME.textMuted}`}>
-                            No pinned chats match your search.
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </section>
-                )}
-
-                {!collapsed && (
-                  <div className="mb-1 px-2 py-1">
-                    <p className={`text-[11px] font-bold uppercase tracking-wider ${THEME.textMuted}`}>
-                      {searchQuery ? "Results" : "Recent"}
-                    </p>
-                  </div>
-                )}
-
-                {recentHistory.length === 0 ? (
-                  <div
-                    className={`mx-1 mt-2 rounded-2xl border border-dashed border-[var(--border-soft)] bg-[var(--bg-surface)]/70 text-center ${
-                      collapsed ? "px-2 py-6" : "px-4 py-8"
-                    }`}
-                  >
-                    <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--bg-elevated)] text-[var(--text-muted)]">
-                      {searchQuery ? <Search size={18} /> : <MessageCircle size={18} />}
+                {/* Selection mode: show all chats flat with grouping */}
+                {selectionActive && (
+                  <>
+                    <div className="mb-1 px-2 py-1">
+                      <p className={`text-[11px] font-bold uppercase tracking-wider ${THEME.textMuted}`}>
+                        Today
+                      </p>
                     </div>
 
-                    {!collapsed && (
-                      <>
+                    {filteredHistory.length === 0 ? (
+                      <div className="mx-1 mt-2 rounded-2xl border border-dashed border-[var(--border-soft)] bg-[var(--bg-surface)]/70 px-4 py-8 text-center">
+                        <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--bg-elevated)] text-[var(--text-muted)]">
+                          <MessageCircle size={18} />
+                        </div>
                         <p className={`mt-3 text-xs font-semibold ${THEME.textMuted}`}>
-                          {searchQuery
-                            ? "No chats match your search"
-                            : pinnedHistory.length > 0
-                              ? "No recent chats"
-                              : "No chats yet"}
+                          No chats to select
                         </p>
-                        <p className={`mt-1 text-[11px] leading-4 ${THEME.textMuted}`}>
-                          {searchQuery
-                            ? "Try a different keyword."
-                            : pinnedHistory.length > 0
-                              ? "Pinned chats are shown above."
-                              : "Generated speech will appear here."}
-                        </p>
-                      </>
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        {filteredHistory.map(renderChat)}
+                      </div>
                     )}
-                  </div>
-                ) : (
-                  <div className="space-y-1">
-                    {recentHistory.map(renderChat)}
-                  </div>
+                  </>
+                )}
+
+                {/* Normal mode */}
+                {!selectionActive && (
+                  <>
+                    {!collapsed && pinnedIds.length > 0 && (
+                      <section className="mb-3">
+                        <button
+                          type="button"
+                          onClick={() => setPinnedOpen((current) => !current)}
+                          className="flex w-full items-center gap-1 px-2 py-1.5 text-left"
+                        >
+                          {pinnedOpen ? (
+                            <ChevronDown size={15} className="text-[var(--text-muted)]" />
+                          ) : (
+                            <ChevronRight size={15} className="text-[var(--text-muted)]" />
+                          )}
+                          <span className={`text-[11px] font-bold uppercase tracking-wider ${THEME.textMuted}`}>
+                            Pinned
+                          </span>
+                        </button>
+
+                        {pinnedOpen && (
+                          <div className="space-y-1">
+                            {pinnedHistory.length > 0 ? (
+                              pinnedHistory.map(renderChat)
+                            ) : (
+                              <p className={`px-7 py-2 text-[11px] ${THEME.textMuted}`}>
+                                No pinned chats match your search.
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </section>
+                    )}
+
+                    {!collapsed && (
+                      <div className="mb-1 px-2 py-1">
+                        <p className={`text-[11px] font-bold uppercase tracking-wider ${THEME.textMuted}`}>
+                          {searchQuery ? "Results" : "Recent"}
+                        </p>
+                      </div>
+                    )}
+
+                    {recentHistory.length === 0 ? (
+                      <div
+                        className={`mx-1 mt-2 rounded-2xl border border-dashed border-[var(--border-soft)] bg-[var(--bg-surface)]/70 text-center ${collapsed ? "px-2 py-6" : "px-4 py-8"
+                          }`}
+                      >
+                        <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--bg-elevated)] text-[var(--text-muted)]">
+                          {searchQuery ? <Search size={18} /> : <MessageCircle size={18} />}
+                        </div>
+
+                        {!collapsed && (
+                          <>
+                            <p className={`mt-3 text-xs font-semibold ${THEME.textMuted}`}>
+                              {searchQuery
+                                ? "No chats match your search"
+                                : pinnedHistory.length > 0
+                                  ? "No recent chats"
+                                  : "No chats yet"}
+                            </p>
+                            <p className={`mt-1 text-[11px] leading-4 ${THEME.textMuted}`}>
+                              {searchQuery
+                                ? "Try a different keyword."
+                                : pinnedHistory.length > 0
+                                  ? "Pinned chats are shown above."
+                                  : "Generated speech will appear here."}
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        {recentHistory.map(renderChat)}
+                      </div>
+                    )}
+                  </>
                 )}
               </>
             )}
           </div>
 
-          {pinLimitMessage && !collapsed && (
-            <div className="shrink-0 px-3 pb-2">
-              <div className={`rounded-xl border border-[var(--border-soft)] bg-[var(--bg-surface)] px-3 py-2 text-center text-xs font-medium shadow-sm ${THEME.textPrimary}`}>
-                {pinLimitMessage}
+          {selectionActive ? (
+            /* Selection actions bar */
+            <div className="shrink-0 border-t border-[var(--border-soft)] bg-[var(--bg-surface)]">
+              <div className="flex items-stretch">
+                <button
+                  type="button"
+                  onClick={handleMultiPinToggle}
+                  disabled={selectedCount === 0}
+                  className={`flex min-h-14 flex-1 items-center justify-center gap-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${THEME.textPrimary
+                    } hover:bg-[var(--bg-elevated)]`}
+                >
+                  {canUnpinSelection ? (
+                    <>
+                      <PinOff size={17} strokeWidth={2} className="text-[var(--text-muted)]" />
+                      <span>Unpin</span>
+                    </>
+                  ) : (
+                    <>
+                      <Pin size={17} strokeWidth={2} className="text-[var(--text-muted)]" />
+                      <span>Pin</span>
+                    </>
+                  )}
+                </button>
+
+                <div className="w-px bg-[var(--border-soft)]" />
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (selectedCount === 0) return;
+                    setMultiDeleteOpen(true);
+                  }}
+                  disabled={selectedCount === 0}
+                  className="flex min-h-14 flex-1 items-center justify-center gap-2 text-sm font-semibold text-red-500 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-red-950/40"
+                >
+                  <Trash2 size={17} strokeWidth={2} />
+                  <span>Delete</span>
+                </button>
               </div>
             </div>
-          )}
+          ) : (
+            <div className="shrink-0 border-t border-[var(--border-soft)] p-3">
+              <div className="rounded-2xl bg-[var(--bg-surface)] shadow-sm ring-1 ring-[var(--border-soft)]">
+                <div
+                  className={`flex items-center ${collapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-3"
+                    }`}
+                >
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
+                    <div
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+                      style={{
+                        backgroundColor: "var(--accent-light)",
+                        color: "var(--accent-primary)",
+                      }}
+                    >
+                      <UserCircle size={21} />
+                    </div>
 
-          <div className="shrink-0 border-t border-[var(--border-soft)] p-3">
-            <div className="rounded-2xl bg-[var(--bg-surface)] shadow-sm ring-1 ring-[var(--border-soft)]">
-              <div
-                className={`flex items-center ${
-                  collapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-3"
-                }`}
-              >
-                {/*
-                  Account row:
-                  - The avatar + name + email are NO LONGER clickable
-                  - Only the ellipsis (⋯) icon opens the account menu
-                */}
-                <div className="flex min-w-0 flex-1 items-center gap-3">
-                  <div
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
-                    style={{
-                      backgroundColor: "var(--accent-light)",
-                      color: "var(--accent-primary)",
-                    }}
-                  >
-                    <UserCircle size={21} />
+                    {!collapsed && (
+                      <div className="min-w-0 flex-1">
+                        <p className={`truncate text-xs font-bold ${THEME.textPrimary}`}>
+                          {user?.full_name || "User"}
+                        </p>
+                        <p className={`truncate text-[10px] ${THEME.textMuted}`}>
+                          {user?.email || ""}
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   {!collapsed && (
-                    <div className="min-w-0 flex-1">
-                      <p className={`truncate text-xs font-bold ${THEME.textPrimary}`}>
-                        {user?.full_name || "User"}
-                      </p>
-                      <p className={`truncate text-[10px] ${THEME.textMuted}`}>
-                        {user?.email || ""}
-                      </p>
-                    </div>
+                    <button
+                      type="button"
+                      aria-label="Account options"
+                      data-account-options-button="true"
+                      onClick={handleAccountMenuToggle}
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--text-muted)] transition hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] ${menuId === "account" ? "bg-[var(--bg-elevated)] text-[var(--text-primary)]" : ""
+                        }`}
+                    >
+                      <Ellipsis size={18} />
+                    </button>
                   )}
                 </div>
-
-                {!collapsed && (
-                  <button
-                    type="button"
-                    aria-label="Account options"
-                    data-account-options-button="true"
-                    onClick={handleAccountMenuToggle}
-                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--text-muted)] transition hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] ${
-                      menuId === "account" ? "bg-[var(--bg-elevated)] text-[var(--text-primary)]" : ""
-                    }`}
-                  >
-                    <Ellipsis size={18} />
-                  </button>
-                )}
               </div>
             </div>
-          </div>
+          )}
         </div>
       </aside>
 
-      {menuId && menuId !== "account" && (
+      {menuId && menuId !== "account" && !selectionMode && (
         <ChatOptionsMenu
           position={menuPosition}
           pinned={isPinned(menuId)}
@@ -1375,6 +1660,9 @@ export default function Sidebar({
           onRename={() => {
             const item = safeHistory.find((h) => String(h.id) === String(menuId));
             if (item) handleRenameStart(item);
+          }}
+          onSelectMultiple={() => {
+            enterSelectionMode(menuId);
           }}
           onDelete={() => {
             const item = safeHistory.find((h) => String(h.id) === String(menuId));
@@ -1454,6 +1742,38 @@ export default function Sidebar({
         danger={false}
         onCancel={() => setUnpinChat(null)}
         onConfirm={handleUnpinConfirm}
+      />
+
+      <IOSConfirmAlert
+        open={multiDeleteOpen}
+        title={`Delete ${selectedCount} chat${selectedCount === 1 ? "" : "s"}?`}
+        message={`This will permanently remove ${selectedCount} selected chat${selectedCount === 1 ? "" : "s"} from your history.`}
+        confirmText={`Delete ${selectedCount === 1 ? "Chat" : "Chats"}`}
+        danger
+        loading={multiDeleteLoading}
+        onCancel={() => {
+          if (!multiDeleteLoading) setMultiDeleteOpen(false);
+        }}
+        onConfirm={handleMultiDeleteConfirm}
+      />
+
+      <IOSConfirmAlert
+        open={multiUnpinOpen}
+        title={`Unpin ${selectedPinnedCount} chat${selectedPinnedCount === 1 ? "" : "s"}?`}
+        message={`Are you sure you want to unpin ${selectedPinnedCount} selected chat${selectedPinnedCount === 1 ? "" : "s"}? You can pin them again later.`}
+        confirmText={`Unpin ${selectedPinnedCount === 1 ? "Chat" : "Chats"}`}
+        cancelText="Cancel"
+        danger={false}
+        onCancel={() => setMultiUnpinOpen(false)}
+        onConfirm={handleMultiUnpinConfirm}
+      />
+
+      <IOSInfoAlert
+        open={Boolean(pinLimitAlert)}
+        title={pinLimitAlert?.title || "Pin limit reached"}
+        message={pinLimitAlert?.message || ""}
+        buttonText="OK"
+        onClose={() => setPinLimitAlert(null)}
       />
     </>
   );

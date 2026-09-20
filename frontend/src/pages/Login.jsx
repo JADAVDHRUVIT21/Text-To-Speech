@@ -38,6 +38,7 @@ function Login() {
 
   const [toast, setToast] = useState(null);
   const toastTimerRef = useRef(null);
+  const navigateTimerRef = useRef(null);
 
   const showToast = (message, type = "success", duration = 3000) => {
     if (toastTimerRef.current) {
@@ -64,6 +65,7 @@ function Login() {
   useEffect(() => {
     return () => {
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+      if (navigateTimerRef.current) clearTimeout(navigateTimerRef.current);
     };
   }, []);
 
@@ -75,22 +77,42 @@ function Login() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
+
+    if (loading || transitioning) return;
+
     setLoading(true);
 
     try {
       const response = await loginUser(form);
       login(response);
-      showToast("Signed in successfully", "success", 1800);
+
+      // Turn off the button spinner, show the success toast
+      setLoading(false);
+
+      // Turn on the splash animation
       setTransitioning(true);
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 1600);
+
+      showToast("Signed in successfully", "success", 1400);
+
+      /*
+       * Wait for the browser to actually PAINT the splash before we
+       * start the countdown to navigate. Two requestAnimationFrame
+       * ticks guarantee the previous frame has been rendered.
+       */
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          navigateTimerRef.current = setTimeout(() => {
+            navigate("/dashboard", { replace: true });
+          }, 1400);
+        });
+      });
     } catch (err) {
       setError(
         err.response?.data?.detail ||
         "Unable to login. Please check your email and password."
       );
       setLoading(false);
+      setTransitioning(false);
     }
   };
 
@@ -365,7 +387,7 @@ function Login() {
       <LoadingTransition
         visible={transitioning}
         message="Signing you in"
-        subMessage="Loading your speech workspace"
+        subMessage="To Text-to-Speech"
       />
     </div>
   );

@@ -15,6 +15,7 @@ export function AuthProvider({ children }) {
 
     useEffect(() => {
         const verifySession = async () => {
+            // No token at all → not logged in
             if (!token) {
                 setLoading(false);
                 return;
@@ -23,8 +24,7 @@ export function AuthProvider({ children }) {
             try {
                 const freshUser = await getCurrentUser(token);
 
-                // Backend now returns the full user object from /api/auth/me
-                // (id, full_name, email). Keep local state + storage in sync.
+                // Backend returned a valid user → keep session in sync
                 const normalizedUser = {
                     id: freshUser?.id ?? user?.id ?? null,
                     full_name: freshUser?.full_name ?? user?.full_name ?? "",
@@ -52,11 +52,35 @@ export function AuthProvider({ children }) {
                 } catch {
                     // ignore sessionStorage errors
                 }
-            } catch {
-                localStorage.removeItem("tts_token");
-                localStorage.removeItem("tts_user");
-                setToken(null);
-                setUser(null);
+            } catch (err) {
+                /*
+                 * CRITICAL: Distinguish between:
+                 *   1. Real auth failure (401)         → log out
+                 *   2. Network / server / CORS error   → keep session (optimistic)
+                 *
+                 * On mobile cold starts, /api/auth/me often fails on the first
+                 * attempt because the network isn't ready yet. We must NOT wipe
+                 * the user's session in that case.
+                 */
+
+                const status = err?.response?.status;
+
+                if (status === 401 || status === 403) {
+                    // Token is genuinely invalid/expired → log out
+                    console.warn("Session invalid (401/403), logging out.");
+                    localStorage.removeItem("tts_token");
+                    localStorage.removeItem("tts_user");
+                    setToken(null);
+                    setUser(null);
+                } else {
+                    // Network error / timeout / 5xx / CORS → keep the cached session.
+                    // The user object is already in localStorage, and ProtectedRoute
+                    // treats token + user as "authenticated".
+                    console.warn(
+                        "Could not verify session (non-auth error). Keeping cached session.",
+                        err?.message || err
+                    );
+                }
             } finally {
                 setLoading(false);
             }

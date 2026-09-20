@@ -36,6 +36,7 @@ import {
 
 import Sidebar from "../components/Sidebar";
 import AIAssistant from "../components/AIAssistant";
+import LoadingTransition from "../components/LoadingTransition";
 
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
@@ -62,6 +63,7 @@ const MAX_DOCUMENT_SIZE = 10 * 1024 * 1024; // 10 MB
  *   Toast:                         z-[45] ← informational, never blocking
  *   Download progress card:        z-[40]
  *   Upload progress overlay:       z-[200]
+ *   Logout splash:                 z-[9999]
  *   Mobile message sheet:          z-[300] (AIAssistant.jsx)
  */
 const Z = {
@@ -953,6 +955,9 @@ export default function Dashboard() {
     const [logoutAlert, setLogoutAlert] = useState(false);
     const [systemAudioReady, setSystemAudioReady] = useState(false);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+    /* Logout splash state */
+    const [loggingOut, setLoggingOut] = useState(false);
 
     const [isDragging, setIsDragging] = useState(false);
     const dragCounterRef = useRef(0);
@@ -2210,7 +2215,19 @@ ${textValue}
         setHistory(Array.isArray(updatedHistory) ? updatedHistory : []);
     };
 
-    const handleLogout = () => { setLogoutAlert(false); hideToast(); logout(); };
+    /* ------------------------------------------------------------------ */
+    /*  Logout — now shows a splash before actually logging out            */
+    /* ------------------------------------------------------------------ */
+    const handleLogout = () => {
+        setLogoutAlert(false);
+        hideToast();
+        setLoggingOut(true);
+
+        // Keep the splash on screen for ~1.2s, then log out
+        setTimeout(() => {
+            logout();
+        }, 1200);
+    };
 
     const showPlayer = Boolean(audioUrl) || systemAudioReady;
     const canDownload = Boolean(audioUrl);
@@ -2735,6 +2752,13 @@ ${textValue}
             />
 
             <AIAssistant />
+
+            {/* Logout splash — appears on top of everything while signing out */}
+            <LoadingTransition
+                visible={loggingOut}
+                message="Signing you out"
+                subMessage="See you next time"
+            />
         </div>
     );
 }

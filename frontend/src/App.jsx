@@ -1,4 +1,5 @@
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import "@heyputer/puter.js";
 
 import Login from "./pages/Login";
@@ -6,19 +7,29 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import { useAuth } from "./context/AuthContext";
 import Account from "./pages/Account";
-import AppSplash from "./components/AppSplash";
 
 /*
  * ProtectedRoute — for pages that require login.
  * If not logged in → redirect to /login.
- *
- * While AuthContext is verifying, render nothing — the AppSplash at the
- * top of AppRoutes is already covering the screen.
  */
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading, token, user } = useAuth();
 
-  if (loading) return null;
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-100 dark:bg-slate-950">
+        <div className="flex flex-col items-center gap-3">
+          <div
+            className="h-10 w-10 animate-spin rounded-full border-[3px] border-slate-200"
+            style={{ borderTopColor: "var(--accent-primary)" }}
+          />
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+            Restoring your session…
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const hasSession = isAuthenticated || (Boolean(token) && Boolean(user));
 
@@ -31,37 +42,67 @@ function ProtectedRoute({ children }) {
 
 /*
  * GuestRoute — for pages only guests should see (login, register).
- * If already logged in → redirect to /dashboard.
  *
- * While AuthContext is verifying, render nothing — the AppSplash covers
- * the screen anyway.
+ * IMPORTANT: This does NOT redirect the instant we detect a session,
+ * because that would kill the login page's own splash animation before
+ * it can play. Instead, we wait a short grace period so the splash can
+ * finish and the page can navigate itself.
+ *
+ * If nothing happens in that window (e.g. user landed here already
+ * logged in), we redirect.
  */
 function GuestRoute({ children }) {
   const { isAuthenticated, loading, token, user } = useAuth();
-
-  if (loading) return null;
+  const location = useLocation();
+  const [redirectNow, setRedirectNow] = useState(false);
 
   const hasSession = isAuthenticated || (Boolean(token) && Boolean(user));
 
-  if (hasSession) {
+  useEffect(() => {
+    if (loading) return;
+    if (!hasSession) {
+      setRedirectNow(false);
+      return;
+    }
+
+    // Already logged in → wait for the login splash (~1.6s) before
+    // bouncing to the dashboard. This is what lets the splash play.
+    const timer = setTimeout(() => {
+      setRedirectNow(true);
+    }, 1600);
+
+    return () => clearTimeout(timer);
+    // We intentionally include location.pathname so re-visiting /login
+    // re-runs the grace period.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, hasSession, location.pathname]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-100 dark:bg-slate-950">
+        <div className="flex flex-col items-center gap-3">
+          <div
+            className="h-10 w-10 animate-spin rounded-full border-[3px] border-slate-200"
+            style={{ borderTopColor: "var(--accent-primary)" }}
+          />
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+            Restoring your session…
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (hasSession && redirectNow) {
     return <Navigate to="/dashboard" replace />;
   }
 
   return children;
 }
 
-/*
- * AppRoutes — uses useAuth() so it must live inside AuthProvider.
- * Renders the global splash + the routes.
- */
-function AppRoutes() {
-  const { loading } = useAuth();
-
+function App() {
   return (
-    <>
-      {/* Global cold-start splash */}
-      <AppSplash ready={!loading} minimumDuration={1400} />
-
+    <BrowserRouter>
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
 
@@ -103,14 +144,6 @@ function AppRoutes() {
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </>
-  );
-}
-
-function App() {
-  return (
-    <BrowserRouter>
-      <AppRoutes />
     </BrowserRouter>
   );
 }

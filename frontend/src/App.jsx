@@ -7,6 +7,10 @@ import Dashboard from "./pages/Dashboard";
 import { useAuth } from "./context/AuthContext";
 import Account from "./pages/Account";
 
+/*
+ * ProtectedRoute — for pages that require login.
+ * If not logged in → redirect to /login.
+ */
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading, token, user } = useAuth();
 
@@ -41,15 +45,61 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
+/*
+ * GuestRoute — for pages only guests should see (login, register).
+ * If already logged in → redirect to /dashboard.
+ */
+function GuestRoute({ children }) {
+  const { isAuthenticated, loading, token, user } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-100 dark:bg-slate-950">
+        <div className="flex flex-col items-center gap-3">
+          <div
+            className="h-10 w-10 animate-spin rounded-full border-[3px] border-slate-200"
+            style={{ borderTopColor: "var(--accent-primary)" }}
+          />
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+            Restoring your session…
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const hasSession = isAuthenticated || (Boolean(token) && Boolean(user));
+
+  if (hasSession) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return children;
+}
+
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
 
-        <Route path="/login" element={<Login />} />
+        <Route
+          path="/login"
+          element={
+            <GuestRoute>
+              <Login />
+            </GuestRoute>
+          }
+        />
 
-        <Route path="/register" element={<Register />} />
+        <Route
+          path="/register"
+          element={
+            <GuestRoute>
+              <Register />
+            </GuestRoute>
+          }
+        />
 
         <Route
           path="/dashboard"

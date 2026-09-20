@@ -50,6 +50,28 @@ const ALLOWED_DOCUMENT_EXTENSIONS = ["pdf", "txt", "docx", "epub"];
 const MAX_DOCUMENT_SIZE = 10 * 1024 * 1024; // 10 MB
 
 /* ------------------------------------------------------------------ */
+/*  Z-INDEX MAP (keep in sync with AIAssistant.jsx)                    */
+/* ------------------------------------------------------------------ */
+/*
+ *   Mobile sidebar overlay:        z-40  (Sidebar.jsx)
+ *   Sidebar (desktop + mobile):    z-50  (Sidebar.jsx)
+ *   Floating AI button:            z-30  (AIAssistant.jsx)  ← BELOW sidebar
+ *   AI chat window (small/full):   z-[60](AIAssistant.jsx)  ← above sidebar
+ *   iOS alerts (this file):        z-[250]
+ *   iOS alerts (Sidebar.jsx):      z-[200]/z-[220]
+ *   Toast:                         z-[45] ← informational, never blocking
+ *   Download progress card:        z-[40]
+ *   Upload progress overlay:       z-[200]
+ *   Mobile message sheet:          z-[300] (AIAssistant.jsx)
+ */
+const Z = {
+    TOAST: "z-[45]",
+    DOWNLOAD_CARD: "z-[40]",
+    ALERT: "z-[250]",
+    UPLOAD_OVERLAY: "z-[200]",
+};
+
+/* ------------------------------------------------------------------ */
 /*  Theme-aware utility class strings                                  */
 /* ------------------------------------------------------------------ */
 
@@ -542,7 +564,7 @@ function AccountMenu({ user, onSettings, onLogout }) {
 function IOSLogoutAlert({ open, onCancel, onConfirm }) {
     if (!open) return null;
     return (
-        <div className="fixed inset-0 z-[110] flex items-end justify-center bg-black/30 p-3 backdrop-blur-[2px] sm:items-center sm:p-5">
+        <div className={`fixed inset-0 ${Z.ALERT} flex items-end justify-center bg-black/30 p-3 backdrop-blur-[2px] sm:items-center sm:p-5`}>
             <div className={`w-full max-w-[390px] overflow-hidden rounded-[28px] border shadow-2xl backdrop-blur-xl ${THEME.panel}`}>
                 <div className="px-6 pb-5 pt-6 text-center">
                     <h3 className={`text-[17px] font-bold ${THEME.textPrimary}`}>Log out?</h3>
@@ -575,7 +597,7 @@ function IOSLogoutAlert({ open, onCancel, onConfirm }) {
 function IOSDownloadConfirmAlert({ open, onCancel, onConfirm }) {
     if (!open) return null;
     return (
-        <div className="fixed inset-0 z-[110] flex items-end justify-center bg-black/30 p-3 backdrop-blur-[2px] sm:items-center sm:p-5">
+        <div className={`fixed inset-0 ${Z.ALERT} flex items-end justify-center bg-black/30 p-3 backdrop-blur-[2px] sm:items-center sm:p-5`}>
             <div className={`w-full max-w-[390px] overflow-hidden rounded-[28px] border shadow-2xl backdrop-blur-xl ${THEME.panel}`}>
                 <div className="px-6 pb-5 pt-6 text-center">
                     <h3 className={`text-[17px] font-bold ${THEME.textPrimary}`}>
@@ -641,11 +663,10 @@ function IOSUploadProgressOverlay({ upload, onCancel }) {
             : "var(--accent-primary)";
 
     return (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/35 p-4 backdrop-blur-[3px]">
+        <div className={`fixed inset-0 ${Z.UPLOAD_OVERLAY} flex items-center justify-center bg-black/35 p-4 backdrop-blur-[3px]`}>
             <div
                 className={`w-full max-w-[380px] overflow-hidden rounded-[28px] border shadow-[0_30px_80px_rgba(15,23,42,0.35)] backdrop-blur-2xl ${THEME.panel}`}
             >
-                {/* Header icon */}
                 <div className="flex flex-col items-center px-6 pt-7">
                     <div
                         className="flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-lg transition-colors"
@@ -679,7 +700,6 @@ function IOSUploadProgressOverlay({ upload, onCancel }) {
                     )}
                 </div>
 
-                {/* Progress bar */}
                 <div className="px-6 pb-5 pt-5">
                     <div className={`relative h-2 w-full overflow-hidden rounded-full ${THEME.elevated}`}>
                         <div
@@ -689,7 +709,6 @@ function IOSUploadProgressOverlay({ upload, onCancel }) {
                                 backgroundColor: barColor,
                             }}
                         />
-                        {/* Shimmer highlight while active */}
                         {isActive && !isCancelling && (
                             <div
                                 className="pointer-events-none absolute inset-y-0 left-0 rounded-full opacity-60"
@@ -726,7 +745,6 @@ function IOSUploadProgressOverlay({ upload, onCancel }) {
                     </div>
                 </div>
 
-                {/* Cancel button (only while active) */}
                 {canCancel && (
                     <div className={`border-t ${THEME.border}`}>
                         <button
@@ -750,7 +768,6 @@ function IOSUploadProgressOverlay({ upload, onCancel }) {
                 )}
             </div>
 
-            {/* Keyframes for the shimmer animation, injected once */}
             <style>{`
                 @keyframes tts-shimmer {
                     0% { transform: translateX(-100%); }
@@ -781,7 +798,7 @@ function DownloadProgressCard({ state, progress, onCancel, onClose }) {
     if (isCancelled) barColor = "#94a3b8";
 
     return (
-        <div className="pointer-events-none fixed bottom-3 right-3 z-[150] w-[calc(100%-24px)] max-w-[360px] sm:bottom-5 sm:right-5 sm:w-[360px]">
+        <div className={`pointer-events-none fixed bottom-3 right-3 ${Z.DOWNLOAD_CARD} w-[calc(100%-24px)] max-w-[360px] sm:bottom-5 sm:right-5 sm:w-[360px]`}>
             <div className={`pointer-events-auto overflow-hidden rounded-2xl border shadow-[0_18px_50px_rgba(15,23,42,0.18)] backdrop-blur-xl ${THEME.panel}`}>
                 <div className="flex items-center gap-3 px-4 py-3">
                     <div
@@ -857,7 +874,7 @@ function IOSToast({ toast, onClose }) {
     const isError = toast.type === "error";
 
     return (
-        <div className="pointer-events-none fixed right-3 top-3 z-[9999] w-[calc(100%-24px)] max-w-[390px] sm:right-5 sm:top-5 sm:w-[390px]">
+        <div className={`pointer-events-none fixed right-3 top-3 ${Z.TOAST} w-[calc(100%-24px)] max-w-[390px] sm:right-5 sm:top-5 sm:w-[390px]`}>
             <div className={`pointer-events-auto flex items-center gap-3 rounded-[22px] border px-4 py-3.5 shadow-[0_18px_50px_rgba(15,23,42,0.16)] backdrop-blur-xl ${
                 isError
                     ? "border-red-200/80 bg-white/95 dark:border-red-900/60 dark:bg-slate-900/95"
@@ -937,38 +954,22 @@ export default function Dashboard() {
     const [systemAudioReady, setSystemAudioReady] = useState(false);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-    /* Drag & Drop state for the message box */
     const [isDragging, setIsDragging] = useState(false);
     const dragCounterRef = useRef(0);
 
-    /* Upload progress overlay state (iOS/macOS style) */
     const [uploadProgress, setUploadProgress] = useState({
         visible: false,
         fileName: "",
         fileSize: 0,
         progress: 0,
-        phase: "idle", // idle | uploading | extracting | cancelling | success | error | cancelled
+        phase: "idle",
         errorMessage: "",
     });
     const uploadProgressTimerRef = useRef(null);
     const uploadHideTimerRef = useRef(null);
-    /* AbortController for the in-flight upload (used by the Cancel button) */
     const uploadAbortRef = useRef(null);
-    /* Track whether we cancelled the current upload intentionally */
     const uploadCancelledRef = useRef(false);
-    /*
-     * Monotonic request ID. Every new upload increments this.
-     * When a request resolves, we compare its captured ID with the current
-     * value. If they differ, the response is stale (superseded or cancelled)
-     * and MUST be ignored — this is what prevents the message box from being
-     * filled after the user pressed Cancel.
-     */
     const uploadRequestIdRef = useRef(0);
-    /*
-     * Track which request ID owns the documentLoading state.
-     * This prevents the loader from getting stuck when a cancelled request
-     * skips its finally block.
-     */
     const documentLoadingIdRef = useRef(0);
 
     const [downloadConfirmOpen, setDownloadConfirmOpen] = useState(false);
@@ -981,7 +982,6 @@ export default function Dashboard() {
     const toastTimerRef = useRef(null);
     const systemSpeechRef = useRef(null);
 
-    /* Register Puter on window + silence its demo notification */
     useEffect(() => {
         window.puter = puter;
         puter.quiet = true;
@@ -989,7 +989,6 @@ export default function Dashboard() {
         return () => { if (window.puter === puter) delete window.puter; };
     }, []);
 
-    /* Track sidebar collapsed state so we can shift content padding */
     useEffect(() => {
         try {
             setSidebarCollapsed(localStorage.getItem("tts_sidebar_collapsed_v1") === "1");
@@ -1518,10 +1517,6 @@ ${textValue}
         }
     }, [text]);
 
-    /* ------------------------------------------------------------------ */
-    /*  Upload progress helpers (iOS/macOS style)                          */
-    /* ------------------------------------------------------------------ */
-
     const resetUploadProgress = () => {
         if (uploadProgressTimerRef.current) {
             clearInterval(uploadProgressTimerRef.current);
@@ -1543,7 +1538,6 @@ ${textValue}
         });
     };
 
-    /* Simulate a smooth upload phase (0 → ~90%) while the real request runs */
     const startSimulatedUpload = (fileName, fileSize) => {
         if (uploadProgressTimerRef.current) {
             clearInterval(uploadProgressTimerRef.current);
@@ -1563,7 +1557,6 @@ ${textValue}
             errorMessage: "",
         });
 
-        // Larger files take a bit longer to reach ~90%
         const totalDurationMs = Math.min(
             6000,
             Math.max(1800, (fileSize / (1024 * 1024)) * 900)
@@ -1574,7 +1567,6 @@ ${textValue}
 
         uploadProgressTimerRef.current = setInterval(() => {
             tick += 1;
-            // Ease-out curve: fast at first, slowing near 90%
             const raw = tick / steps;
             const eased = 1 - Math.pow(1 - Math.min(raw, 1), 2.2);
             const next = Math.min(90, Math.round(eased * 90));
@@ -1597,7 +1589,6 @@ ${textValue}
         }, tickMs);
     };
 
-    /* Fill the remaining 90 → 100 and show success, then auto-hide */
     const completeUploadProgress = (fileName, fileSize) => {
         if (uploadProgressTimerRef.current) {
             clearInterval(uploadProgressTimerRef.current);
@@ -1618,7 +1609,6 @@ ${textValue}
         uploadHideTimerRef.current = setTimeout(() => {
             setUploadProgress((prev) => ({ ...prev, visible: false }));
             uploadHideTimerRef.current = null;
-            // Fully reset after the fade-out
             uploadHideTimerRef.current = setTimeout(() => {
                 resetUploadProgress();
                 uploadHideTimerRef.current = null;
@@ -1652,42 +1642,31 @@ ${textValue}
         }, 1600);
     };
 
-    /* User pressed Cancel on the progress overlay */
     const cancelUploadProgress = () => {
-        // Nothing to cancel
         if (!uploadProgress.visible) return;
         if (uploadProgress.phase !== "uploading" && uploadProgress.phase !== "extracting") return;
 
-        // Mark as cancelled AND invalidate the request ID so that even if the
-        // network promise resolves successfully, we ignore its payload.
         uploadCancelledRef.current = true;
         uploadRequestIdRef.current += 1;
 
-        // Immediately release the document-loading state for THIS request.
-        // Since we invalidated the ID above, the in-flight request's finally
-        // block will not clear it, so we clear it here.
         documentLoadingIdRef.current = 0;
         setDocumentLoading(false);
 
-        // Stop the simulated progress animation
         if (uploadProgressTimerRef.current) {
             clearInterval(uploadProgressTimerRef.current);
             uploadProgressTimerRef.current = null;
         }
 
-        // Abort the network request
         if (uploadAbortRef.current) {
             try { uploadAbortRef.current.abort(); } catch { /* ignore */ }
             uploadAbortRef.current = null;
         }
 
-        // Clear any pending hide timer from a previous state
         if (uploadHideTimerRef.current) {
             clearTimeout(uploadHideTimerRef.current);
             uploadHideTimerRef.current = null;
         }
 
-        // Show "cancelling" state briefly, then "cancelled", then auto-hide
         setUploadProgress((prev) => ({
             ...prev,
             phase: "cancelling",
@@ -1710,10 +1689,6 @@ ${textValue}
             }, 900);
         }, 200);
     };
-
-    /* ------------------------------------------------------------------ */
-    /*  Document upload handler (shared by button + drag/drop)            */
-    /* ------------------------------------------------------------------ */
 
     const processDocumentFile = async (file) => {
         if (!file) return;
@@ -1741,50 +1716,32 @@ ${textValue}
         setSuccess("");
         hideToast();
 
-        // Reset cancel flag for this new upload
         uploadCancelledRef.current = false;
 
-        // Increment request ID — any previous in-flight request becomes stale.
         uploadRequestIdRef.current += 1;
         const myRequestId = uploadRequestIdRef.current;
 
-        // Track who owns the loading state
         documentLoadingIdRef.current = myRequestId;
 
-        // Fresh AbortController for this upload (used by the Cancel button)
         uploadAbortRef.current = new AbortController();
         const mySignal = uploadAbortRef.current.signal;
 
-        // Show the iOS-style progress overlay (upload → extract → done)
         startSimulatedUpload(file.name, file.size);
 
         try {
             const data = await extractDocumentText(file, token, mySignal);
             const extractedText = String(data?.text || "").trim();
 
-            /*
-             * CRITICAL CHECK #1: If this request is stale (a newer upload started
-             * or the user pressed Cancel), ignore the response completely.
-             */
             if (myRequestId !== uploadRequestIdRef.current) {
                 console.log("Ignoring stale upload response (superseded).");
                 return;
             }
 
-            /*
-             * CRITICAL CHECK #2: If the user pressed Cancel while the request
-             * was in flight, ignore the successful payload entirely — do NOT
-             * touch the text box or success message.
-             */
             if (uploadCancelledRef.current) {
                 console.log("Ignoring upload response after user cancelled.");
                 return;
             }
 
-            /*
-             * CRITICAL CHECK #3: If the AbortController has been aborted,
-             * discard the result regardless of what the network returned.
-             */
             if (mySignal.aborted) {
                 console.log("Ignoring upload response: signal aborted.");
                 return;
@@ -1831,7 +1788,6 @@ ${textValue}
             completeUploadProgress(data?.filename || file.name, file.size);
             showToast("Document text extracted successfully.", "success", 3200);
         } catch (err) {
-            // If the user explicitly cancelled, do not show an error toast
             const wasCancelled =
                 uploadCancelledRef.current ||
                 err?.name === "CanceledError" ||
@@ -1841,12 +1797,9 @@ ${textValue}
 
             if (wasCancelled) {
                 console.log("Document upload cancelled by user.");
-                // The cancelUploadProgress function already handles the UI;
-                // just make sure we don't fall through to the error path.
                 return;
             }
 
-            // Also ignore stale errors from superseded requests
             if (myRequestId !== uploadRequestIdRef.current) {
                 console.log("Ignoring stale upload error (superseded).");
                 return;
@@ -1872,12 +1825,6 @@ ${textValue}
             showError(errorMessage);
             failUploadProgress(file.name, errorMessage);
         } finally {
-            /*
-             * Only clear the loading state if THIS request still owns it.
-             * When the user cancels, cancelUploadProgress() already sets
-             * documentLoadingIdRef.current = 0 and setDocumentLoading(false),
-             * so this block correctly does nothing.
-             */
             if (documentLoadingIdRef.current === myRequestId) {
                 documentLoadingIdRef.current = 0;
                 uploadAbortRef.current = null;
@@ -1891,10 +1838,6 @@ ${textValue}
         event.target.value = "";
         await processDocumentFile(file);
     };
-
-    /* ------------------------------------------------------------------ */
-    /*  Drag & Drop handlers for the message box                          */
-    /* ------------------------------------------------------------------ */
 
     const handleDragEnter = (event) => {
         event.preventDefault();
@@ -1935,8 +1878,6 @@ ${textValue}
         const file = files[0];
         await processDocumentFile(file);
     };
-
-    /* ------------------------------------------------------------------ */
 
     const handleGenerate = async () => {
         if (!text.trim()) { showError("Please enter some text before generating speech."); return; }
@@ -2092,7 +2033,6 @@ ${textValue}
     };
 
     const handleClear = () => {
-        // Cancel any in-flight upload first
         uploadRequestIdRef.current += 1;
         uploadCancelledRef.current = false;
         documentLoadingIdRef.current = 0;
@@ -2424,9 +2364,6 @@ ${textValue}
                                 </div>
                             )}
 
-                            {/* ---------------------------------------------------------------- */}
-                            {/*  Message box with drag & drop support                           */}
-                            {/* ---------------------------------------------------------------- */}
                             <div
                                 className="relative"
                                 onDragEnter={handleDragEnter}
@@ -2450,7 +2387,6 @@ ${textValue}
                                     } ${THEME.textPrimary}`}
                                 />
 
-                                {/* Drag overlay */}
                                 {isDragging && (
                                     <div
                                         className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-[22px] border-2 border-dashed"
@@ -2483,7 +2419,6 @@ ${textValue}
                                     </span>
                                 </div>
                             </div>
-                            {/* ---------------------------------------------------------------- */}
 
                             <div className="mt-5 grid gap-4 sm:grid-cols-2">
                                 <IOSDropdown
@@ -2701,7 +2636,7 @@ ${textValue}
                                             <button
                                                 type="button"
                                                 onClick={skipForward}
-                                                   disabled={!audioUrl}
+                                                disabled={!audioUrl}
                                                 className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition active:scale-90 disabled:cursor-not-allowed disabled:opacity-40 ${THEME.elevated} ${THEME.textPrimary} hover:bg-[var(--bg-surface)]`}
                                                 title={audioUrl ? "Skip forward 10 seconds" : "Not available for system voice"}
                                             >
@@ -2794,7 +2729,6 @@ ${textValue}
                 onConfirm={handleLogout}
             />
 
-            {/* iOS / macOS style upload progress overlay */}
             <IOSUploadProgressOverlay
                 upload={uploadProgress}
                 onCancel={cancelUploadProgress}

@@ -18,6 +18,24 @@ import puter from "@heyputer/puter.js";
 
 const AI_MODEL = "openai/gpt-5.6-luna";
 
+/*
+ * Z-INDEX MAP (do not exceed these when adding new layers)
+ *   Sidebar (mobile):         z-50  (in Sidebar.jsx)
+ *   Mobile sidebar overlay:   z-40  (in Sidebar.jsx)
+ *   iOS Confirm alerts:       z-200 (in Sidebar.jsx / Dashboard.jsx)
+ *   iOS Info alerts:          z-220
+ *   Floating AI button:       z-30  ← BELOW sidebar & modals
+ *   AI chat window (small):   z-[60] ← above sidebar but below modals
+ *   AI chat window (full):    z-[60]
+ *   Mobile message sheet:     z-[300] ← above modals so it works inside fullscreen chat
+ */
+const Z = {
+  FLOATING_BUTTON: "z-30",
+  CHAT_WINDOW: "z-[60]",
+  MOBILE_SHEET_BACKDROP: "z-[300]",
+  MOBILE_SHEET_PANEL: "z-[301]",
+};
+
 const SYSTEM_PROMPT = `
 You are the AI Assistant inside a modern Text-to-Speech web application built with React, FastAPI, PostgreSQL and Puter.js.
 
@@ -246,25 +264,25 @@ function MobileMessageSheet({
   return createPortal(
     <>
       <div
-        className="
+        className={`
           fixed
           inset-0
-          z-[100000]
+          ${Z.MOBILE_SHEET_BACKDROP}
           bg-black/40
           backdrop-blur-[2px]
           sm:hidden
-        "
+        `}
         onClick={onClose}
       />
 
       <div
-        className="
+        className={`
           fixed
           inset-x-0
           bottom-0
-          z-[100001]
+          ${Z.MOBILE_SHEET_PANEL}
           sm:hidden
-        "
+        `}
         onClick={(e) => e.stopPropagation()}
       >
         <div
@@ -396,13 +414,10 @@ export default function AIAssistant() {
   const [editingId, setEditingId] = useState(null);
   const [editingValue, setEditingValue] = useState("");
 
-  // Desktop hover state
   const [activeMessageId, setActiveMessageId] = useState(null);
 
-  // Mobile bottom-sheet state
   const [sheetMessage, setSheetMessage] = useState(null);
 
-  // Copied feedback
   const [copiedId, setCopiedId] = useState(null);
 
   const inputRef = useRef(null);
@@ -768,8 +783,6 @@ Assistant:
       longPressTimerRef.current = null;
     }
 
-    // If long-press didn't fire, do nothing (allow normal tap).
-    // Prevents unwanted selection.
     if (longPressFiredRef.current) {
       event.preventDefault?.();
     }
@@ -783,8 +796,8 @@ Assistant:
   };
 
   const windowClasses = isFullscreen
-    ? "fixed inset-0 z-[99999] flex flex-col overflow-hidden bg-white dark:bg-slate-950"
-    : "fixed bottom-4 right-4 z-[99999] flex h-[calc(100vh-32px)] max-h-[720px] w-[calc(100vw-32px)] max-w-[480px] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_25px_80px_rgba(15,23,42,0.28)] dark:border-slate-800 dark:bg-slate-950 dark:shadow-[0_25px_80px_rgba(0,0,0,0.7)]";
+    ? `fixed inset-0 ${Z.CHAT_WINDOW} flex flex-col overflow-hidden bg-white dark:bg-slate-950`
+    : `fixed bottom-4 right-4 ${Z.CHAT_WINDOW} flex h-[calc(100vh-32px)] max-h-[720px] w-[calc(100vw-32px)] max-w-[480px] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_25px_80px_rgba(15,23,42,0.28)] dark:border-slate-800 dark:bg-slate-950 dark:shadow-[0_25px_80px_rgba(0,0,0,0.7)]`;
 
   return (
     <>
@@ -793,11 +806,11 @@ Assistant:
           type="button"
           onClick={() => setIsOpen(true)}
           aria-label="Open AI Assistant"
-          className="
+          className={`
             fixed
             bottom-5
             right-5
-            z-[99999]
+            ${Z.FLOATING_BUTTON}
             flex
             items-center
             gap-2
@@ -818,7 +831,7 @@ Assistant:
             hover:shadow-[0_16px_40px_rgba(37,99,235,0.45)]
             active:scale-95
             dark:shadow-[0_12px_35px_rgba(37,99,235,0.5)]
-          "
+          `}
         >
           <Sparkles className="h-5 w-5" />
 
@@ -1230,8 +1243,6 @@ Assistant:
                         onTouchCancel={handleTouchMove}
                         onDoubleClick={() => startEdit(item)}
                         onContextMenu={(e) => {
-                          // Desktop right-click also opens the mobile sheet
-                          // (nice bonus — but only if not on a touch device)
                           e.preventDefault();
                           setSheetMessage(item);
                         }}
@@ -1273,7 +1284,6 @@ Assistant:
                         </p>
                       </div>
 
-                      {/* Desktop hover action row (hidden on mobile) */}
                       <div
                         className={`
                           mt-1.5 hidden items-center gap-1 rounded-full bg-white/95 px-1.5 py-1
@@ -1612,7 +1622,6 @@ Assistant:
         </div>
       )}
 
-      {/* Mobile bottom sheet — only visible below the sm breakpoint */}
       <MobileMessageSheet
         open={!!sheetMessage}
         copied={copiedId !== null && copiedId === sheetMessage?.id}
